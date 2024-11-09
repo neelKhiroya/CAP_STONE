@@ -5,7 +5,7 @@
 
 
 ##  PLAN
-1. Create a live time chat using go websockets. This will set the foundation for sharing and creating real time drum patterns. 
+1. Create a live time chat using go websockets. This will set the foundation for sharing and creating real time drum patterns.
 
 2. Create a smiple interactive graphic to create drum patterns, then implement the live chat feature such that the drum pattern will be real time data. 
 
@@ -15,7 +15,7 @@
 
 # RESEARCH
 ##  Live Chat:
-    websockets : 
+    websockets : - https://github.com/gorilla/websocket/tree/main/examples/chat
 
 ##  Drum pattern:
     Interactive WebGL: 
