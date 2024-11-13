@@ -15,7 +15,8 @@
 
 # RESEARCH
 ##  Live Chat:
-    websockets : - https://github.com/gorilla/websocket/tree/main/examples/chat
+    websockets : 
+    - https://github.com/gorilla/websocket/tree/main/examples/chat
 
 ##  Drum pattern:
     Interactive WebGL: 
@@ -25,3 +26,4 @@
 
 ##  Invite code:
     Live chat rooms: 
+    - https://medium.com/@parvjn616/building-a-websocket-chat-application-in-go-388fff758575
