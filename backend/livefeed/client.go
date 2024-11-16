@@ -5,7 +5,7 @@
 package main
 
 import (
-	"bytes"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -27,11 +27,6 @@ const (
 	maxMessageSize = 512
 )
 
-var (
-	newline = []byte{'\n'}
-	space   = []byte{' '}
-)
-
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
@@ -45,7 +40,15 @@ type Client struct {
 	conn *websocket.Conn
 
 	// Buffered channel of outbound messages.
-	send chan []byte
+	send chan *Message
+}
+
+type Message struct {
+	Username string `json:"username"`
+	Row0     string `json:"row0"`
+	Row1     string `json:"row1"`
+	Row2     string `json:"row2"`
+	Row3     string `json:"row3"`
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -62,15 +65,19 @@ func (c *Client) readPump() {
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
-		_, message, err := c.conn.ReadMessage()
+		var msg *Message
+		err := c.conn.ReadJSON(&msg)
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("error: %v", err)
 			}
 			break
 		}
-		message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
-		c.hub.broadcast <- message
+		// message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
+
+		//	message is read here!
+
+		c.hub.broadcast <- msg
 	}
 }
 
@@ -96,22 +103,22 @@ func (c *Client) writePump() {
 				return
 			}
 
-			w, err := c.conn.NextWriter(websocket.TextMessage)
+			err := c.conn.WriteJSON(message)
 			if err != nil {
+				fmt.Println(err)
 				return
 			}
-			w.Write(message)
 
-			// Add queued chat messages to the current websocket message.
-			n := len(c.send)
-			for i := 0; i < n; i++ {
-				w.Write(newline)
-				w.Write(<-c.send)
-			}
+			// // Add queued chat messages to the current websocket message.
+			// n := len(c.send)
+			// for i := 0; i < n; i++ {
+			// 	w.Write(newline)
+			// 	w.Write(<-c.send)
+			// }
 
-			if err := w.Close(); err != nil {
-				return
-			}
+			// if err := w.Close(); err != nil {
+			// 	return
+			// }
 		case <-ticker.C:
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
@@ -128,7 +135,11 @@ func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
-	client := &Client{hub: hub, conn: conn, send: make(chan []byte, 256)}
+	client := &Client{
+		hub:  hub,
+		conn: conn,
+		send: make(chan *Message),
+	}
 	client.hub.register <- client
 
 	// Allow collection of memory referenced by the caller by doing all work in

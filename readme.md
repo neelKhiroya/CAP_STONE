@@ -23,6 +23,8 @@
 
 ##  Database:
     Postgres: 
+    - https://www.postgresql.org/docs/8.1/sql-delete.html
+    - https://pkg.go.dev/github.com/jackc/pgx/v5
 
 ##  Invite code:
     Live chat rooms: 
