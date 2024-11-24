@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import useAddPattern from '../hooks/useAddPatterns'; // Import the custom hook
+import useAddPattern from '../hooks/useAddPattern'; // Import the custom hook
 
 const PatternAdd = () => {
     

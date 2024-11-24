@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"postgres/db"
 	"strconv"
@@ -8,8 +9,23 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetAllPatterns(c *gin.Context) {
-	patterns, err := db.GetAllPatterns()
+func GetPageniatedPatterns(c *gin.Context) {
+
+	pageLimitStr := c.DefaultQuery("limit", "10")
+	pageoffsetStr := c.DefaultQuery("offset", "0")
+
+	pageLimit, err := strconv.Atoi(pageLimitStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad limit"})
+		return
+	}
+	pageOffset, err := strconv.Atoi(pageoffsetStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad offset"})
+		return
+	}
+
+	patterns, err := db.GetPageniatedPatterns(c, pageLimit, pageOffset)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -35,7 +51,7 @@ func GetPatternByID(c *gin.Context) {
 	c.JSON(http.StatusOK, pattern)
 }
 
-func GetPatternByName(c *gin.Context) {
+func GetPatternsByName(c *gin.Context) {
 	name := c.DefaultQuery("name", "")
 
 	if name == "" {
@@ -43,13 +59,30 @@ func GetPatternByName(c *gin.Context) {
 		return
 	}
 
-	pattern, err := db.GetPatternByName(name)
+	patterns, err := db.GetPatternsByName(name)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	c.JSON(http.StatusOK, pattern)
+	c.JSON(http.StatusOK, patterns)
+}
+
+func GetDrumRowsForPattern(c *gin.Context) {
+	id := c.Param("id")
+	idint, err := strconv.Atoi(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	drum_rows, err := db.GetDrumRowsForPattern(idint)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, drum_rows)
 }
 
 func GetPatternCount(c *gin.Context) {
@@ -70,7 +103,19 @@ func AddNewPattern(c *gin.Context) {
 		return
 	}
 
-	errer := db.AddPattern(newpattern.Name, newpattern.Username, newpattern.Row0, newpattern.Row1, newpattern.Row2, newpattern.Row3)
+	if newpattern.Name == "" || newpattern.Username == "" || newpattern.Author == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad name or username request"})
+		return
+	}
+
+	if len(newpattern.DrumRows) < 2 || len(newpattern.DrumRows) > 6 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad drum pattern"})
+		return
+	}
+
+	fmt.Println(newpattern.DrumRows)
+
+	errer := db.AddPattern(newpattern)
 	if errer != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": errer.Error()})
 		return
@@ -108,20 +153,29 @@ func DeletePatternsByIds(c *gin.Context) {
 }
 
 func UpdatePatternByID(c *gin.Context) {
+
 	id := c.Param("id")
 	idint, err := strconv.Atoi(id)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad ID format"})
 		return
 	}
+
 	var updatedPattern db.Pattern
 	errer := c.ShouldBindJSON(&updatedPattern)
 	if errer != nil {
-		c.JSON(http.StatusBadRequest, errer.Error())
+		c.JSON(http.StatusBadRequest, gin.H{"error": errer.Error()})
 		return
 	}
+	if len(updatedPattern.DrumRows) < 2 || len(updatedPattern.DrumRows) > 6 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad Drum length"})
+		return
+	}
+	if updatedPattern.Name == "" || updatedPattern.Username == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "bad name or username"})
+	}
 
-	err2 := db.UpdatePatternByID(idint, updatedPattern.Name, updatedPattern.Username, updatedPattern.Row0, updatedPattern.Row1, updatedPattern.Row2, updatedPattern.Row3)
+	err2 := db.UpdatePatternByID(idint, updatedPattern)
 	if err2 != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err2.Error()})
 		return

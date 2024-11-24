@@ -22,10 +22,11 @@ func InitRouter() *gin.Engine {
 
 	// fix proxy issues
 
-	router.GET("/patterns", api.GetAllPatterns)
+	router.GET("/patterns", api.GetPageniatedPatterns)
 	router.GET("/patterns/count", api.GetPatternCount)
 	router.GET("/patterns/:id", api.GetPatternByID)
-	router.GET("/patterns/search", api.GetPatternByName)
+	router.GET("/drumrows/:id", api.GetDrumRowsForPattern)
+	router.GET("/patterns/search", api.GetPatternsByName)
 	router.POST("/patterns", api.AddNewPattern)
 	router.POST("/patterns/delete", api.DeletePatternsByIds)
 	router.DELETE("/patterns/:id", api.DeletePatterByID)

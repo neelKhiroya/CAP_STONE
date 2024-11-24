@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { useState, useEffect } from 'react';
 
-function useGetPatterns() {
+function useGetAllPatterns() {
     const [patterns, setPatterns] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -21,4 +21,4 @@ function useGetPatterns() {
     return {patterns, loading, error}
 }
 
-export default useGetPatterns
+export default useGetAllPatterns

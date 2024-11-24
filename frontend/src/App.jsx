@@ -1,12 +1,10 @@
-import PatternAdd from "./patterns/PatternAdd"
-import PatternList from "./patterns/PatternList"
+import Patterns from "./patterns/Patterns"
 
 function App() {
  
   return (
     <div>
-      <PatternList/>
-      <PatternAdd/>
+      <Patterns/>
     </div>
   )
 }
