@@ -42,7 +42,7 @@ func GetPatternByID(c *gin.Context) {
 		return
 	}
 
-	pattern, err := db.GetPatternByID(idint)
+	pattern, err := db.GetPatternByID(c, idint)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
@@ -58,8 +58,7 @@ func GetPatternsByName(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad name request - name is needed"})
 		return
 	}
-
-	patterns, err := db.GetPatternsByName(name)
+	patterns, err := db.GetPatternsByName(c, name)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -76,7 +75,7 @@ func GetDrumRowsForPattern(c *gin.Context) {
 		return
 	}
 
-	drum_rows, err := db.GetDrumRowsForPattern(idint)
+	drum_rows, err := db.GetDrumRowsForPattern(c, idint)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
@@ -86,7 +85,7 @@ func GetDrumRowsForPattern(c *gin.Context) {
 }
 
 func GetPatternCount(c *gin.Context) {
-	count, err := db.GetPatternCount()
+	count, err := db.GetPatternCount(c)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -115,7 +114,7 @@ func AddNewPattern(c *gin.Context) {
 
 	fmt.Println(newpattern.DrumRows)
 
-	errer := db.AddPattern(newpattern)
+	errer := db.AddPattern(c, newpattern)
 	if errer != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": errer.Error()})
 		return
@@ -132,7 +131,7 @@ func DeletePatterByID(c *gin.Context) {
 		return
 	}
 
-	errer := db.DeletePatternByID(idint)
+	errer := db.DeletePatternByID(c, idint)
 	if errer != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": errer.Error()})
 		return
@@ -175,7 +174,7 @@ func UpdatePatternByID(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "bad name or username"})
 	}
 
-	err2 := db.UpdatePatternByID(idint, updatedPattern)
+	err2 := db.UpdatePatternByID(c, idint, updatedPattern)
 	if err2 != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err2.Error()})
 		return

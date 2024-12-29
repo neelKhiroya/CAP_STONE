@@ -1,0 +1,44 @@
+.container {
+    border: black 1px solid;
+    display: grid;
+    grid-template-rows: repeat(4, auto);
+    /* 4 rows with automatic height */
+    gap: 10px;
+    /* Optional: space between grid items */
+}
+
+.grid-row {
+    display: grid;
+    grid-template-columns: 1fr repeat(16, 1fr);
+    /* 1 column for labels, 16 columns for buttons */
+    gap: 10px;
+    /* Optional: space between items within the row */
+}
+
+.row-label {
+    display: flex;
+    grid-column: 1;
+    /* Place the label in the first column */
+    text-align: center;
+    font-weight: bold;
+    padding: 10px;
+}
+
+.grid-button {
+    padding: 10px;
+    background-color: #ddd;
+    /* Default background color */
+    border: 1px solid #ccc; 
+    cursor: pointer;
+    transition: .5s;
+}
+
+.grid-button.active {
+    background-color: #4CAF50;
+    /* Active button background */
+    color: white;
+}
+
+.grid-button:focus {
+    outline: none;
+}

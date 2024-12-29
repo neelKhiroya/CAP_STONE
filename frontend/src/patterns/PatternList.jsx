@@ -1,4 +1,4 @@
-import useGetAllPatterns from "../hooks/useGetAllPatterns";
+import useGetPaginatedPatterns from "../hooks/useGetPaginatedPatterns";
 import PropTypes from 'prop-types';
 
 PatternList.propTypes = {
@@ -11,7 +11,7 @@ function PatternList({
     selectedPatternID,
   }) {
 
-    const {patterns, loading, error} = useGetAllPatterns();
+    const {patterns, loading, error} = useGetPaginatedPatterns(20, 0);
 
     if (loading) return <div>Loading!!</div>
 
@@ -26,7 +26,7 @@ function PatternList({
     <div>
       <ul>
         {patterns.map((pattern) => (
-          <li key={pattern.ID} onClick={() => onSelection(pattern.ID)}>{pattern.Name} by {pattern.Username}</li>
+          <li key={pattern.id} onClick={() => onSelection(pattern.id)}>{pattern.name} by {pattern.username}</li>
         ))}
       </ul>
     </div>

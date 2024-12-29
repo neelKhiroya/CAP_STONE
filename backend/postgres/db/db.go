@@ -4,13 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"time"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var dbConnection *pgx.Conn
+var dbPool *pgxpool.Pool
 
 type Drum_Row struct {
 	ID       int    `json:"id"`
@@ -32,33 +31,33 @@ func Connect() error {
 
 	connStr := "postgres://drumuser:pringle@localhost:5432/drumpatterns"
 
-	conn, err := pgx.Connect(context.Background(), connStr)
+	config, err := pgxpool.ParseConfig(connStr)
 	if err != nil {
-		return fmt.Errorf("unable to connect to database: %v", err)
+		return fmt.Errorf("unable to parse dataconnection info: %v", err)
 	}
 
-	dbConnection = conn
+	config.MaxConns = 10
+
+	dbPool, err = pgxpool.NewWithConfig(context.Background(), config)
+	if err != nil {
+		return fmt.Errorf("data connection error: %v", err)
+	}
 	fmt.Println("Successfully connected to the database.")
 	return nil
 }
 
 func Close() {
-	if dbConnection != nil {
-		err := dbConnection.Close(context.Background())
-		if err != nil {
-			log.Printf("Error closing connection: %v", err)
-		} else {
-			fmt.Println("Database connection closed.")
-		}
+	if dbPool != nil {
+		dbPool.Close()
 	}
 }
 
 func Ping() error {
-	if dbConnection == nil {
+	if dbPool == nil {
 		return fmt.Errorf("no database connection established")
 	}
 
-	err := dbConnection.Ping(context.Background())
+	err := dbPool.Ping(context.Background())
 	if err != nil {
 		return fmt.Errorf("unable to ping the database: %v", err)
 	}
@@ -67,7 +66,7 @@ func Ping() error {
 
 func MakeTables() error {
 
-	tx, err1 := dbConnection.Begin(context.Background())
+	tx, err1 := dbPool.Begin(context.Background())
 	if err1 != nil {
 		return fmt.Errorf("bad connection to postgres: %v", err1)
 	}
@@ -118,7 +117,7 @@ func DeleteTables() error {
 	DROP TABLE IF EXISTS drum_rows;
 	DROP TABLE IF EXISTS patterns;
 	`
-	_, err := dbConnection.Exec(context.Background(), query)
+	_, err := dbPool.Exec(context.Background(), query)
 	if err != nil {
 		fmt.Println(err)
 		return fmt.Errorf("error dropping patterns: %v", err)
@@ -128,7 +127,10 @@ func DeleteTables() error {
 	return nil
 }
 
-func AddPattern(pattern Pattern) error {
+func AddPattern(ctx context.Context, pattern Pattern) error {
+
+	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 
 	query := `
 		INSERT INTO patterns (name, author, username, description, created_at)
@@ -136,13 +138,13 @@ func AddPattern(pattern Pattern) error {
 `
 
 	var patternID int
-	err := dbConnection.QueryRow(context.Background(), query, pattern.Name, pattern.Author, pattern.Username, pattern.Description).Scan(&patternID)
+	err := dbPool.QueryRow(timeoutCtx, query, pattern.Name, pattern.Author, pattern.Username, pattern.Description).Scan(&patternID)
 	if err != nil {
 		return fmt.Errorf("error inserting pattern: %v", err)
 	}
 
 	for _, drumRow := range pattern.DrumRows {
-		err := AddDrumRowToPattern(patternID, drumRow)
+		err := AddDrumRowToPattern(ctx, patternID, drumRow)
 		if err != nil {
 			return fmt.Errorf("error adding drum row: %v", err)
 		}
@@ -151,14 +153,17 @@ func AddPattern(pattern Pattern) error {
 	return nil
 }
 
-func AddDrumRowToPattern(id int, drumRow Drum_Row) error {
+func AddDrumRowToPattern(ctx context.Context, id int, drumRow Drum_Row) error {
+
+	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 
 	query := `
 		INSERT INTO drum_rows (pattern_id, row_name, drum_data)
 		VALUES ($1, $2, $3)
 	`
 
-	_, err := dbConnection.Exec(context.Background(), query, id, drumRow.RowName, drumRow.DrumData)
+	_, err := dbPool.Exec(timeoutCtx, query, id, drumRow.RowName, drumRow.DrumData)
 	if err != nil {
 		return fmt.Errorf("error adding drum row to pattern: %v", err)
 	}
@@ -168,14 +173,18 @@ func AddDrumRowToPattern(id int, drumRow Drum_Row) error {
 
 func GetPageniatedPatterns(ctx context.Context, limit, offet int) ([]Pattern, error) {
 
+	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
 	query := `
 		SELECT id, name, author, username, description, created_at 
 		FROM patterns
 		LIMIT $1 OFFSET $2
 	`
 
-	rows, err := dbConnection.Query(ctx, query, limit, offet)
+	rows, err := dbPool.Query(timeoutCtx, query, limit, offet)
 	if err != nil {
+		fmt.Println(err)
 		return nil, fmt.Errorf("query error: %v", err)
 	}
 	defer rows.Close()
@@ -198,7 +207,10 @@ func GetPageniatedPatterns(ctx context.Context, limit, offet int) ([]Pattern, er
 	return patterns, nil
 }
 
-func GetPatternByID(id int) (Pattern, error) {
+func GetPatternByID(ctx context.Context, id int) (Pattern, error) {
+
+	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 
 	query := `
 			SELECT id, name, author, username, description, created_at FROM patterns where id = $1
@@ -206,7 +218,7 @@ func GetPatternByID(id int) (Pattern, error) {
 
 	var pattern Pattern
 
-	err := dbConnection.QueryRow(context.Background(), query, id).Scan(
+	err := dbPool.QueryRow(timeoutCtx, query, id).Scan(
 		&pattern.ID,
 		&pattern.Name,
 		&pattern.Author,
@@ -221,7 +233,7 @@ func GetPatternByID(id int) (Pattern, error) {
 		return pattern, fmt.Errorf("error getting pattern: %v", err)
 	}
 
-	drumRows, err := GetDrumRowsForPattern(id)
+	drumRows, err := GetDrumRowsForPattern(ctx, id)
 	if err != nil {
 		return pattern, fmt.Errorf("bad drum rows")
 	}
@@ -231,7 +243,10 @@ func GetPatternByID(id int) (Pattern, error) {
 	return pattern, nil
 }
 
-func GetDrumRowsForPattern(id int) ([]Drum_Row, error) {
+func GetDrumRowsForPattern(ctx context.Context, id int) ([]Drum_Row, error) {
+
+	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 
 	query := `
 		SELECT id, row_name, drum_data
@@ -240,7 +255,7 @@ func GetDrumRowsForPattern(id int) ([]Drum_Row, error) {
 	`
 	var drumrows []Drum_Row
 
-	rows, err := dbConnection.Query(context.Background(), query, id)
+	rows, err := dbPool.Query(timeoutCtx, query, id)
 	if err != nil {
 		return drumrows, fmt.Errorf("bad request to postgres: %v", err)
 	}
@@ -270,30 +285,33 @@ func GetDrumRowsForPattern(id int) ([]Drum_Row, error) {
 	return drumrows, nil
 }
 
-func GetPatternsByName(name string) ([]Pattern, error) {
+func GetPatternsByName(ctx context.Context, name string) ([]Pattern, error) {
+
+	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 
 	query := `
 		SELECT id, name, author, username, description, created_at
 		FROM patterns 
-		WHERE name ILIKE $1
+		WHERE name ILIKE $1 LIMIT 5
 	`
 
 	var patterns []Pattern
 
-	rows, err := dbConnection.Query(context.Background(), query, "%"+name+"%")
+	rows, err := dbPool.Query(timeoutCtx, query, "%"+name+"%")
 	if err != nil {
 		return patterns, fmt.Errorf("bad request for pattern name: %s", name)
 	}
 	defer rows.Close()
-
-	if rows.Next() {
+	for rows.Next() {
 		var pattern Pattern
 		err := rows.Scan(
 			&pattern.ID,
 			&pattern.Name,
 			&pattern.Author,
 			&pattern.Username,
-			&pattern.Description)
+			&pattern.Description,
+			&pattern.CreatedAt)
 		if err != nil {
 			return patterns, fmt.Errorf("bad data handle: %v", err)
 		}
@@ -311,13 +329,16 @@ func GetPatternsByName(name string) ([]Pattern, error) {
 	return patterns, nil
 }
 
-func DeletePatternByID(id int) error {
+func DeletePatternByID(ctx context.Context, id int) error {
+
+	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 
 	query := `
 		DELETE FROM patterns WHERE id = $1
 	`
 
-	commandTag, err := dbConnection.Exec(context.Background(), query, id)
+	commandTag, err := dbPool.Exec(timeoutCtx, query, id)
 	if err != nil {
 		return fmt.Errorf("error deleting pattern with id: %d", id)
 	}
@@ -328,7 +349,10 @@ func DeletePatternByID(id int) error {
 	return nil
 }
 
-func DeletePatternsByIds(ids []int) error {
+func DeletePatternsByIds(ctx context.Context, ids []int) error {
+
+	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 
 	if len(ids) == 0 {
 		return fmt.Errorf("bad array passed")
@@ -336,7 +360,7 @@ func DeletePatternsByIds(ids []int) error {
 
 	query := `DELETE FROM patterns WHERE id = ANY($1)`
 
-	_, err := dbConnection.Exec(context.Background(), query, ids)
+	_, err := dbPool.Exec(timeoutCtx, query, ids)
 	if err != nil {
 		return fmt.Errorf("error deleting patterns: %v", err)
 	}
@@ -344,12 +368,15 @@ func DeletePatternsByIds(ids []int) error {
 	return nil
 }
 
-func DeleteDrumRowFromPattern(id int, name string) error {
+func DeleteDrumRowFromPattern(ctx context.Context, id int, name string) error {
+
+	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 
 	checkQuery := `SELECT COUNT(*) FROM patterns WHERE id = $1`
 	var count int
 
-	checkErr := dbConnection.QueryRow(context.Background(), checkQuery, id).Scan(&count)
+	checkErr := dbPool.QueryRow(timeoutCtx, checkQuery, id).Scan(&count)
 	if checkErr != nil {
 		return fmt.Errorf("bad request to db: %v", checkErr)
 	}
@@ -358,7 +385,7 @@ func DeleteDrumRowFromPattern(id int, name string) error {
 	}
 
 	checkQuery = `SELECT COUNT(*) FROM drum_rows WHERE pattern_id = $1`
-	checkErr2 := dbConnection.QueryRow(context.Background(), checkQuery, id).Scan(&count)
+	checkErr2 := dbPool.QueryRow(timeoutCtx, checkQuery, id).Scan(&count)
 	if checkErr2 != nil {
 		return fmt.Errorf("bad request to db: %v", checkErr2)
 	}
@@ -372,7 +399,7 @@ func DeleteDrumRowFromPattern(id int, name string) error {
 		AND row_name = $2
 	`
 
-	_, err := dbConnection.Exec(context.Background(), query, id, name)
+	_, err := dbPool.Exec(timeoutCtx, query, id, name)
 	if err != nil {
 		return fmt.Errorf("bad drum row deletion: %v", err)
 	}
@@ -380,14 +407,17 @@ func DeleteDrumRowFromPattern(id int, name string) error {
 	return nil
 }
 
-func UpdatePatternByID(id int, updatedPattern Pattern) error {
+func UpdatePatternByID(ctx context.Context, id int, updatedPattern Pattern) error {
+
+	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 
 	query := `
 		SELECT COUNT(*) FROM patterns WHERE id = $1
 	`
 
 	var count int
-	err := dbConnection.QueryRow(context.Background(), query, id).Scan(&count)
+	err := dbPool.QueryRow(timeoutCtx, query, id).Scan(&count)
 	if err != nil {
 		return fmt.Errorf("error checking if pattern exists: %v", err)
 	}
@@ -401,12 +431,12 @@ func UpdatePatternByID(id int, updatedPattern Pattern) error {
 		WHERE id = $1
 	`
 
-	_, err = dbConnection.Exec(context.Background(), updateQuery, id, updatedPattern.Name, updatedPattern.Author, updatedPattern.Username, updatedPattern.Description)
+	_, err = dbPool.Exec(timeoutCtx, updateQuery, id, updatedPattern.Name, updatedPattern.Author, updatedPattern.Username, updatedPattern.Description)
 	if err != nil {
 		return fmt.Errorf("error updating pattern: %v", err)
 	}
 
-	err = UpdateDrumRowByID(id, updatedPattern.DrumRows)
+	err = UpdateDrumRowByID(ctx, id, updatedPattern.DrumRows)
 	if err != nil {
 		return fmt.Errorf("bad drum rows: %v", err)
 	}
@@ -414,7 +444,10 @@ func UpdatePatternByID(id int, updatedPattern Pattern) error {
 	return nil
 }
 
-func UpdateDrumRowByID(id int, drumrow []Drum_Row) error {
+func UpdateDrumRowByID(ctx context.Context, id int, drumrow []Drum_Row) error {
+
+	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 
 	updateQuery := `
 		UPDATE drum_rows
@@ -423,7 +456,7 @@ func UpdateDrumRowByID(id int, drumrow []Drum_Row) error {
 		AND id = $4
 	`
 	for _, row := range drumrow {
-		_, err := dbConnection.Exec(context.Background(), updateQuery, row.RowName, row.DrumData, id, row.ID)
+		_, err := dbPool.Exec(timeoutCtx, updateQuery, row.RowName, row.DrumData, id, row.ID)
 		if err != nil {
 			return fmt.Errorf("bad drum row data: %v", err)
 		}
@@ -432,12 +465,16 @@ func UpdateDrumRowByID(id int, drumrow []Drum_Row) error {
 	return nil
 }
 
-func GetPatternCount() (int, error) {
+func GetPatternCount(ctx context.Context) (int, error) {
+
+	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
 	query := `SELECT COUNT(*) FROM patterns`
 
 	var count int
 
-	err := dbConnection.QueryRow(context.Background(), query).Scan(&count)
+	err := dbPool.QueryRow(timeoutCtx, query).Scan(&count)
 	if err != nil {
 		return 0, fmt.Errorf("error getting count: %v", err)
 	}
