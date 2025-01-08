@@ -22,9 +22,11 @@ export default function PatternSearch() {
     useEffect(() => {
         if (patternName) {
             console.log(patternName)
-            //run api calls here
+            //run api stuff here
         }
     }, [patternName])
+
+
 
     return (
         <>
@@ -35,6 +37,9 @@ export default function PatternSearch() {
                 name='patternName'
                 type='text'
             />
+            <div>
+                here
+            </div>
         </>
     )
 }

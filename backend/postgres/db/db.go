@@ -4,9 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 )
 
 var dbPool *pgxpool.Pool
@@ -29,7 +31,17 @@ type Pattern struct {
 
 func Connect() error {
 
-	connStr := "postgres://drumuser:pringle@localhost:5432/drumpatterns"
+	err := godotenv.Load()
+	if err != nil {
+		return fmt.Errorf("cannot load env file %s", err.Error())
+	}
+
+	database := os.Getenv("DATABASE")
+	user := os.Getenv("USER")
+	password := os.Getenv("PASSWORD")
+	port := os.Getenv("PORT")
+
+	connStr := "postgres://" + user + ":" + password + "@localhost:" + port + "/" + database
 
 	config, err := pgxpool.ParseConfig(connStr)
 	if err != nil {

@@ -18,16 +18,16 @@
 .row-label {
     display: flex;
     grid-column: 1;
-    /* Place the label in the first column */
     text-align: center;
     font-weight: bold;
-    padding: 10px;
+    padding: 1px;
+    border-radius: 4px;
+    border: none;
 }
 
 .grid-button {
     padding: 10px;
     background-color: #ddd;
-    /* Default background color */
     border: 1px solid #ccc; 
     cursor: pointer;
     transition: .5s;

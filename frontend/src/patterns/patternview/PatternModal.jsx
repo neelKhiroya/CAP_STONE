@@ -17,6 +17,7 @@ export default function PatternModal({
             <div className="title">
                 <h1 className="name">{pattern.name}</h1>
                 <p className="uploader">by {pattern.username}</p>
+                <p className="createdat">uploaded at {pattern.created_at}</p>
             </div>
 
             <PatternGrid pattern={pattern} grid={grid} />

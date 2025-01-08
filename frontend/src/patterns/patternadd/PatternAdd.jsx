@@ -17,9 +17,8 @@ const PatternAdd = () => {
     drumrows: []
   });
 
-  const rows = 2;
-  const cols = 16;
-  let tempgrid = Array.from({ length: rows }, () => Array(cols).fill(false));
+  //  2 rows of 16 cols
+  let tempgrid = Array.from({ length: 2 }, () => Array(16).fill(false));
 
   const [grid, setGrid] = useState(tempgrid)
   const [drumrows, setDrumrows] = useState(['Snare', 'Kick'])
@@ -33,37 +32,52 @@ const PatternAdd = () => {
   };
 
   const addDrumRow = () => {
-    setGrid(prevGrid => {
-      const newGrid = prevGrid.map(row => [...row]); // copy each row, since 2d
-      tempgrid = Array(16).fill(false)
-      newGrid.push(tempgrid)
-      return newGrid;
-    });
-    setDrumrows(prevRows => {
-      const newRow = [...prevRows]
-      newRow.push("Kick")
-      return newRow
-    });
+    if (drumrows.length < 6) {
+      setGrid(prevGrid => {
+        const newGrid = prevGrid.map(row => [...row]); // copy each row, since 2d
+        tempgrid = Array(16).fill(false)
+        newGrid.push(tempgrid)
+        return newGrid;
+      });
+      setDrumrows(prevRows => {
+        const newRow = [...prevRows]
+        newRow.push("Kick")
+        return newRow
+      });
+    }
   }
 
   const removeDrumRow = () => {
-    setGrid(prevGrid => {
-      const newGrid = prevGrid.map(row => [...row]); // copy each row, since 2d
-      tempgrid = Array(16).fill(false)
-      newGrid.pop()
-      return newGrid;
-    });
-    setDrumrows(prevRows => {
-      const newRow = [...prevRows]
-      newRow.pop()
-      return newRow
-    });
+    if (drumrows.length > 2) {
+      setGrid(prevGrid => {
+        const newGrid = prevGrid.map(row => [...row]); // copy each row, since 2d
+        tempgrid = Array(16).fill(false)
+        newGrid.pop()
+        return newGrid;
+      });
+      setDrumrows(prevRows => {
+        const newRow = [...prevRows]
+        newRow.pop()
+        return newRow
+      });
+    }
   }
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setPattern({ ...pattern, [name]: value });
   };
+
+  const handleDrumRowNameChange = (e) => {
+    const { id, value } = e.target;
+
+    const temprows = drumrows.map((name, index) => {
+      if (id == index) {
+        return value;
+      } else return name;
+    })
+    setDrumrows(temprows)
+  }
 
   const handleSubmit = async (e) => {
 
@@ -107,7 +121,11 @@ const PatternAdd = () => {
         {grid.map((rows, rowIndex) => (
           <div key={rowIndex} className="grid-row">
 
-            <div className="row-label">{drumrows[rowIndex]}</div>
+            <input
+              className="row-label"
+              placeholder={drumrows[rowIndex]}
+              id={rowIndex}
+              onChange={handleDrumRowNameChange} />
 
             {rows.map((_, colIndex) => (
               <button

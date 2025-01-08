@@ -36,14 +36,6 @@ export default function PatternInputs({
             isRequired 
           />
     
-          <PatternInput 
-            patternName={"username"} 
-            title={"Name of User"} 
-            value={pattern.username} 
-            onChange={onChange} 
-            isRequired 
-          />
-    
           <PatternInput
             patternName='description'
             title='Description/notes'
