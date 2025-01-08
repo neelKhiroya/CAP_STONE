@@ -37,7 +37,7 @@ func Connect() error {
 	}
 
 	database := os.Getenv("DATABASE")
-	user := os.Getenv("USER")
+	user := os.Getenv("DB_USER")
 	password := os.Getenv("PASSWORD")
 	port := os.Getenv("PORT")
 
