@@ -1,0 +1,25 @@
+.search-results-container {
+    margin: 0;
+    height: 0;
+    transition: all 1s;
+    width: 100%;
+    background-color: #252422;
+    border-bottom-right-radius: 12px;
+    border-bottom-left-radius: 12px;
+    overflow: hidden;
+}
+
+.spinner-container {
+    height: auto;
+    transition: all 1s;
+    width: 100%;
+    background-color: #252422;
+    border-bottom-right-radius: 12px;
+    border-bottom-left-radius: 12px;
+    display: flex;
+    justify-content: center;
+}
+
+.spinner-padding {
+    margin: 12px;
+}

@@ -3,7 +3,7 @@ import PatternList from './PatternList'
 import PatternView from './patternview/PatternView';
 
 import './patterns.css'
-import PatternSearch from './patternsearch/PatternSearch';
+import SearchBar from './patternsearch/SearchBar';
 
 export default function Patterns() {
 
@@ -14,7 +14,7 @@ export default function Patterns() {
 
     else return (
         <>
-            <PatternSearch />
+            <SearchBar />
 
             <h1 className='title'>PatternDB</h1>
 

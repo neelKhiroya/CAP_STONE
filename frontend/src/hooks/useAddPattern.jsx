@@ -10,8 +10,6 @@ const useAddPattern = () => {
     setLoading(true);
     setError(null);
 
-    console.log(pattern)
-
     try {
       const response = await axios.post('http://localhost:8440/patterns', pattern, {
         headers: {

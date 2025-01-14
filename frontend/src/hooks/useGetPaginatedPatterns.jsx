@@ -21,7 +21,7 @@ function useGetPaginatedPatterns(limit, offset) {
           setError(caughtError);        
           setLoading(false);            
         });
-    }, []);
+    }, [limit, offset]);
     
     return {patterns, loading, error}
 }

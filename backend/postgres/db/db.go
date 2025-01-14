@@ -334,10 +334,6 @@ func GetPatternsByName(ctx context.Context, name string) ([]Pattern, error) {
 		return nil, fmt.Errorf("bad rows: %v", err)
 	}
 
-	if len(patterns) == 0 {
-		return nil, fmt.Errorf("bad pattern name: %s", name)
-	}
-
 	return patterns, nil
 }
 

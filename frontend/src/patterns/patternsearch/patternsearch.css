@@ -1,0 +1,59 @@
+.padding {
+    
+    margin-bottom: calc(12px + 38px + 32px);
+}
+
+.searchbarcontainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-left: 12px;
+    top: 12px;
+    position: absolute;
+    left: 0;
+    width: calc(100% - 24px);
+}
+
+.input-bar-container {
+    position: relative;
+    border-radius: 24px;
+    width: 100%;
+    color: white;
+    background-color: #252422;
+}
+
+.searchbar {
+    height: 38px;
+    padding: 6px 12px;
+    transition: all .5s;
+    border: none;
+    width: 100%;
+    color: white;
+    background-color: #252422;
+    border-radius: 12px;
+
+}
+
+.searchbar:focus {
+    outline: none;
+    color: black;
+    background-color: white;
+}
+
+.clear {
+    transition: all .5s;
+    border-radius: 12px;
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    background-color: transparent;
+    border: none;
+    height: 38px;
+    position: absolute;
+    right: 0px;
+    color: rgba(255, 255, 255, .4);
+}
+
+.clear:hover {
+    color: rgba(255, 255, 255, .8);
+    background-color: rgba(255, 255, 255, .2);
+}

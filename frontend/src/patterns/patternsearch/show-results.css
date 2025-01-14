@@ -1,0 +1,43 @@
+@import url('https://fonts.googleapis.com/css2?family=Inconsolata&display=swap');
+
+.result-title {
+    margin: 8px 0;
+    margin-left: 24px;
+    font-size: 18px;
+    font-family: "Inconsolata", serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    cursor: default;
+    color: rgba(255, 255, 255, .5);
+}
+
+.pattern-list-container {
+    margin-left: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.pattern-item {
+    font-size: 18px;
+    font-family: "Inconsolata", serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    transition: all .5s;
+    padding: 4px 0;
+    max-width: calc(100% - 12px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pattern-item:hover {
+    margin-left: 12px;
+    background-color: rgba(155, 93, 229, .2);
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}

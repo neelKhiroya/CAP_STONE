@@ -17,8 +17,6 @@ function useGetPattern(id) {
             setLoading(false);            // Set loading to false
         });
     }, [id]);
-
-    console.log(pattern);
     
     return {pattern, loading, error}
 }

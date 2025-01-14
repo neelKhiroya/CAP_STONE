@@ -11,7 +11,7 @@ function PatternList({
     selectedPatternID,
   }) {
 
-    const {patterns, loading, error} = useGetPaginatedPatterns(20, 0);
+    const {patterns, loading, error} = useGetPaginatedPatterns(5, 0);
 
     if (loading) return <div>Loading!!</div>
 

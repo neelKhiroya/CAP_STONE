@@ -55,7 +55,7 @@ func GetPatternsByName(c *gin.Context) {
 	name := c.DefaultQuery("name", "")
 
 	if name == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "bad name request - name is needed"})
+		c.JSON(http.StatusOK, nil)
 		return
 	}
 	patterns, err := db.GetPatternsByName(c, name)
