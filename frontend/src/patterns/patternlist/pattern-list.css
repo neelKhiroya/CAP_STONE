@@ -1,0 +1,44 @@
+.list-container {
+    margin: 24px;
+    border: white 1px solid;
+    
+}
+
+.list-grid-mobile {
+    margin: 0 12px;
+    transition: all .5s;
+    display: grid;
+    grid-template-columns: repeat(1, 142px);
+    grid-template-rows: repeat(6, 1fr);
+    gap: 12px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.list-grid {
+    height: 256px;
+    padding: 24px 0;
+    transition: all .5s;
+    animation-delay: .5s;
+    display: grid;
+    flex: 1 1 0px;
+    justify-content: center;
+    align-items: center;
+    grid-template-columns: repeat(3, auto);
+    grid-template-rows: repeat(2, auto);
+    gap: 12px;
+    text-overflow: ellipsis;
+    overflow-x: scroll;
+    overflow-y: hidden;
+    min-width: 0 !important;
+}
+
+.list-item {
+    transition: all .5s;
+    opacity: 0;
+}
+
+.spinner-anime {
+    transition: all .5s;
+    opacity: 0;
+}

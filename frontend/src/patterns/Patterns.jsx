@@ -1,27 +1,17 @@
-import { useState } from 'react'
-import PatternList from './PatternList'
-import PatternView from './patternview/PatternView';
+import PatternList from './patternlist/PatternList'
 
 import './patterns.css'
 import SearchBar from './patternsearch/SearchBar';
 
 export default function Patterns() {
 
-    const [selectedPatternID, setID] = useState();
-    const [isPatternSelected, setPatternSelected] = useState(false)
-
-    if (isPatternSelected) return (<PatternView id={selectedPatternID} onClose={setPatternSelected} />)
-
-    else return (
+    return (
         <>
             <SearchBar />
 
             <h1 className='title'>PatternDB</h1>
 
-            <PatternList
-                handlePatternSelect={setPatternSelected}
-                selectedPatternID={setID}
-            />
+            <PatternList />
         </>
     )
 }

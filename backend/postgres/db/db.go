@@ -191,7 +191,8 @@ func GetPageniatedPatterns(ctx context.Context, limit, offet int) ([]Pattern, er
 	query := `
 		SELECT id, name, author, username, description, created_at 
 		FROM patterns
-		LIMIT $1 OFFSET $2
+		ORDER BY created_at DESC
+		LIMIT $1 OFFSET $2;
 	`
 
 	rows, err := dbPool.Query(timeoutCtx, query, limit, offet)

@@ -1,18 +1,20 @@
-import { useState } from "react"
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Patterns from "./patterns/Patterns"
 import PatternAdd from "./patterns/patternadd/PatternAdd"
 
 import "./App.css"
+import PatternView from './patterns/patternview/PatternView';
 
 function App() {
  
-  const [isSelected, setSelected] = useState(false);
-
   return (
-    <div>
-      {isSelected ? <PatternAdd/> : <Patterns/>}
-      <button onClick={() => setSelected(!isSelected)}> click to toggle </button>
-    </div>
+    <Router>
+      <Routes>
+        <Route path='/'             element={<Patterns />} />
+        <Route path='/pattern/:id'  element={<PatternView />} />
+        <Route path='/create/new'   element={<PatternAdd />}/>
+      </Routes>
+    </Router>
   )
 }
 

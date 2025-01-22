@@ -1,4 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Inconsolata&family=Playwrite+AU+SA:wght@100..400&display=swap');
+
 body {
+    font-family: 'Inconsolata', 'Playwrite AU SA', sans-serif;
+    font-weight: 400;
     background-color: #04080c;
     color: #eef1e4;
     margin: 0;

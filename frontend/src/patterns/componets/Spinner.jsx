@@ -4,21 +4,24 @@ import PropTypes from "prop-types"
 import './spinner.css'
 
 Spinner.propTypes = {
-  isLoading: PropTypes.bool
+  height: PropTypes.string,
+  width: PropTypes.string
 }
 
 Spinner.default = {
-  isLoading: true,
+  height: 'auto',
+  width: 'auto'
 }
 
 export default function Spinner({
-  isLoading,
+  height,
+  width
 }) {
 
   return (
-    <div className='center'>
+    <div className='center' style={{height: height, width: width}}> 
       <ColorRing
-        visible={isLoading}
+        visible={true}
         height="100"
         width="100"
         ariaLabel="vortex-loading"

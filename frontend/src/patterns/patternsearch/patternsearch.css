@@ -1,6 +1,6 @@
 .padding {
-    
-    margin-bottom: calc(12px + 38px + 32px);
+    /* padding + height of search bar + height from search bar */
+    margin-bottom: calc(12px + 38px + 48px);
 }
 
 .searchbarcontainer {
@@ -48,6 +48,8 @@
     background-color: transparent;
     border: none;
     height: 38px;
+    width: 42px;
+    cursor: pointer;
     position: absolute;
     right: 0px;
     color: rgba(255, 255, 255, .4);

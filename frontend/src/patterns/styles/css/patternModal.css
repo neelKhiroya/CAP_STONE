@@ -37,38 +37,71 @@
 }
 
 .mybutton {
-    height: 24px;
+    transition: all .5s;
+    background-color: transparent;
+    color: #c8b6ff;
+    margin: 8px;
+    height: 38px;
+    width: 56px;
+    border: #111111 2px solid;
+    border-radius: 24px;
 }
 
-button {
+.mybutton:hover {
+    background-color: rgba(55, 55, 55, .6);
+    border: #7a7a7a 2px solid;
+    color: #9d4edd;
     cursor: pointer;
-    background-color: #EDF6F9;
-    height: 24px;
-    width: 48px;
-    border-radius: 6px;
-    border: #006D77 1px solid;
-    color: #006D77;
 }
-
 
 .title {
     text-align: center;
-    font-family: "Raleway", sans-serif;
+    font-family: 'Playwrite AU SA' !important;
     font-optical-sizing: auto;
     font-weight: 20px;
     font-style: normal;
+    margin-bottom: 64px;
+}
+
+.mobile_name {
+    font-size: 42px;
+    font-weight: 12px;
 }
 
 .name {
     margin-top: 64px;
+    margin-bottom: 0;
     font-weight: 20px;
     font-size: 56px;
 }
 
 .uploader {
+    text-shadow: none;
+    margin-top: 12px;
     font-size: large;
+    color: white;
 }
 
 .createdat {
+    color: rgba(255, 255, 255, .7);
+    text-shadow: none;
+    font-family: 'Inconsolata' !important;
     font-size: large;
+}
+
+.center {
+    display: flex;
+    justify-content: center;
+    align-content: center;
+    align-items: center;
+    height: 90vh;
+}
+
+.desc-container {
+    margin: 12px;
+    margin-top: 48px;
+}
+
+.desc-container.mobile {
+    margin-top: 0;
 }

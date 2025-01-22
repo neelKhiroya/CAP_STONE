@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types'
 import './show-results.css'
-import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 ShowResults.propTypes = {
     patterns: PropTypes.any,
@@ -12,18 +12,16 @@ export default function ShowResults({
     patternName
 }) {
 
-    const [isSelected, setSelected] = useState(false)
-    const [patternID, setPatternID] = useState(-1)
+    const navigate = useNavigate()
 
     // pump back a bool and id to main.jsx
 
     if (!patterns && patternName.length >= 3) return (
-        <div className='show-results-container'>no pattern found with : {patternName}</div>
+        <div className='no-results'>uh oh! nothing found for : {patternName}</div>
     )
 
     const handlePatternSelect = (patternID) => {
-        setSelected(true)
-        setPatternID(patternID)
+        navigate(`/pattern/${patternID}`)
     }
 
     if (patterns) return (
@@ -33,7 +31,6 @@ export default function ShowResults({
                 {patterns.map((pattern) => {
                     return <div className='pattern-item' key={pattern.id} onClick={() => handlePatternSelect(pattern.id)}>
                        {pattern.name} uploaded by {pattern.username}
-                       
                     </div>
                 })
                 }

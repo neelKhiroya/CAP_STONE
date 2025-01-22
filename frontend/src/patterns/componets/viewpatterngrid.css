@@ -1,41 +1,96 @@
 .container {
-    border: black 1px solid;
+    border: none;
+    font-family: 'Inconsolata' !important;
     display: grid;
     grid-template-rows: repeat(4, auto);
-    /* 4 rows with automatic height */
     gap: 10px;
-    /* Optional: space between grid items */
+    margin: 28px;
+    margin-right: 46px;
+    overflow: scroll;
+}
+
+.mobile-container {
+    border: none;
+    font-family: 'Inconsolata' !important;
+    display: grid;
+    grid-template-rows: repeat(8, auto);
+    gap: 10px;
+}
+
+.mobile-grid-half {
+    margin: 18px;
+    margin-right: 42px;
+    display: grid;
+    grid-template-rows: repeat(4, auto);
+    gap: 10px;
+}
+
+.mobile-grid-row {
+    display: grid;
+    grid-template-columns: 1fr repeat(10, 1fr);
+    gap: 10px;
 }
 
 .grid-row {
     display: grid;
-    grid-template-columns: 1fr repeat(16, 1fr);
-    /* 1 column for labels, 16 columns for buttons */
+    grid-template-columns: 1fr repeat(20, 1fr);
     gap: 10px;
-    /* Optional: space between items within the row */
+}
+
+.mobile-row-label {
+    width: 52px;
+    text-overflow: ellipsis;
+    overflow: hidden;
 }
 
 .row-label {
+    width: 84px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    border-bottom: white 1px solid;
+    border-radius: 0;
     display: flex;
     grid-column: 1;
-    /* Place the label in the first column */
     text-align: center;
     font-weight: bold;
-    padding: 10px;
 }
 
-.grid-button {
-    padding: 10px;
-    background-color: #ddd;
-    /* Default background color */
-    border: 1px solid #ccc; 
+.mobile-grid-button {
+    padding: 12px;
+    border: 1px solid #ccc;
     cursor: pointer;
     transition: .5s;
 }
 
+.mobile-grid-button.active {
+    background-color: blue;
+}
+
+.mobile-grid-button.light {
+    background-color: rgba(255, 255, 255, .4);
+}
+
+.mobile-grid-button.dark {
+    background-color: rgba(255, 255, 255, .2);
+}
+
+.grid-button {
+    padding: 18px;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    transition: .5s;
+}
+
+.grid-button.light {
+    background-color: rgba(255, 255, 255, .4);
+}
+
+.grid-button.dark {
+    background-color: rgba(255, 255, 255, .2);
+}
+
 .grid-button.active {
     background-color: #4CAF50;
-    /* Active button background */
     color: white;
 }
 

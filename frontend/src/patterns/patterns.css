@@ -1,8 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Inconsolata&display=swap');
-
 .title {
     font-size: 48px;
-    font-family: "Inconsolata", serif;
+    font-family: 'Playwrite AU SA' !important;
     font-optical-sizing: auto;
     font-weight: 400;
     font-style: normal;

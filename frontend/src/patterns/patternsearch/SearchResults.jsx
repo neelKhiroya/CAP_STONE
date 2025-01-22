@@ -83,7 +83,7 @@ export default function SearchResults({
     return (
         <div className='search-results-container' ref={searchRef}>
             {delayedLoading ?
-                <Spinner /> :
+                <Spinner height={'100px'}/> :
                 <ShowResults
                     patterns={patterns}
                     patternName={patternName}
