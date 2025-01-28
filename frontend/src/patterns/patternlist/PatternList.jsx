@@ -17,7 +17,7 @@ function PatternList() {
   const { patterns, loading, error } = useGetPaginatedPatterns(6, offset);
   const { patternCount, loadingCount, countError } = useGetTotalPatternCount();
   const [delayedLoading, setLoading] = useState(true)
-
+  
   //  on load animation
   useEffect(() => {
     handleSpinnerFadeOut()
@@ -78,7 +78,7 @@ function PatternList() {
     anime({
       targets: '.list-item',
       opacity: 1,
-      duration: 500,
+      duration: 150,
     })
   }
 
@@ -114,7 +114,7 @@ function PatternList() {
   else return (
     <div className="list-container">
       <div className="list-grid">
-        {delayedLoading ?
+        {delayedLoading || loading ?
           <div className="spinner-anime">
             <Spinner height={'100%'} />
           </div> :

@@ -1,3 +1,4 @@
+import PatternCreate from './patterncreate/PatternCreate';
 import PatternList from './patternlist/PatternList'
 
 import './patterns.css'
@@ -12,6 +13,8 @@ export default function Patterns() {
             <h1 className='title'>PatternDB</h1>
 
             <PatternList />
+
+            <PatternCreate />
         </>
     )
 }
