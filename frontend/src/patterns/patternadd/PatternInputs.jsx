@@ -1,6 +1,8 @@
 import PropTypes from "prop-types"
 import PatternInput from "./PatternInput"
 
+import './pattern-inputs.css';
+
 PatternInputs.propTypes = {
     pattern: PropTypes.any.isRequired,
     onChange: PropTypes.func.isRequired,
@@ -11,7 +13,7 @@ export default function PatternInputs({
     onChange
 }) {
   return (
-    <>
+    <div className="pattern-input-container">
     <PatternInput
             patternName="name"
             title="Pattern Name: "
@@ -43,6 +45,6 @@ export default function PatternInputs({
             onChange={onChange}
             isRequired={false}
           />
-    </>
+    </div>
   )
 }

@@ -4,7 +4,7 @@ import { convertGridAndNamesToStrings } from '../../util/convertStringsAndGrids'
 
 import "./patternadd.css"
 import PatternInputs from './PatternInputs';
-
+import Spinner from '../componets/Spinner'
 const PatternAdd = () => {
 
   const { loading, error, addPattern } = useAddPattern(); // Use the custom hook
@@ -108,9 +108,9 @@ const PatternAdd = () => {
 
   return (
     <div>
-      <h2>Add a New Pattern</h2>
+      <h2 className='title'>Add a New Pattern</h2>
       {error && <p style={{ color: 'red' }}>Error: {error.message}</p>}
-      {loading && <p>Loading...</p>}
+      {loading && <Spinner/>}
 
       <PatternInputs
         pattern={pattern}

@@ -1,5 +1,7 @@
 import PropTypes from "prop-types"
 
+import './pattern-input.css'
+
 PatternInput.propTypes = {
     patternName: PropTypes.string.isRequired,
     title: PropTypes.string.isRequired,
@@ -16,15 +18,16 @@ export default function PatternInput({
     isRequired
 }) {
     return (
-        <div>
-            <label htmlFor={patternName}> {title}</label>
+        <div className="input-container">
             <input
+                className="my-input"
                 type="text"
                 id={patternName}
                 name={patternName}
                 value={value}
                 onChange={onChange}
                 required={isRequired}
+                placeholder={title}
             />
         </div>
     )

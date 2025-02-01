@@ -1,0 +1,4 @@
+.pattern-inputs-container {
+    display: grid;
+    grid-template-columns: repeat(3, 2px);
+}

@@ -10,8 +10,8 @@ export default function PatternCreate() {
         <div className="create-container-style">
             <h2 className="create-title">Want to create a pattern?</h2>
             <div className="create-container">
-                <button className='button-alone' onClick={() => navagate('/create/new')}> click to create alone </button>
-                <button> click to collaborate </button>
+                <button className='button-create' onClick={() => navagate('/create/new')}> click to create alone </button>
+                <button className='button-create'> click to collaborate </button>
             </div>
         </div>
     )
