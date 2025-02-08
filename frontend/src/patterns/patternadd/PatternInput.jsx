@@ -8,6 +8,7 @@ PatternInput.propTypes = {
     value: PropTypes.string.isRequired,
     onChange: PropTypes.func.isRequired,
     isRequired: PropTypes.bool.isRequired,
+    className: PropTypes.string,
 }
 
 export default function PatternInput({
@@ -15,12 +16,13 @@ export default function PatternInput({
     title,
     value,
     onChange,
-    isRequired
+    isRequired,
+    className
 }) {
     return (
         <div className="input-container">
             <input
-                className="my-input"
+                className={className}
                 type="text"
                 id={patternName}
                 name={patternName}

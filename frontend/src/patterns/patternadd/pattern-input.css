@@ -1,4 +1,11 @@
 .input-container {
-    border: white 1px solid;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+.my-input {
+    width:  100%;
+    text-align: center;
     margin: 24px;
+    padding: 12px;
 }

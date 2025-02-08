@@ -6,6 +6,7 @@ import '../styles/css/patternModal.css'
 import PatternModal from "./PatternModal";
 import Spinner from '../componets/Spinner';
 import { useEffect, useState } from 'react';
+import BackButton from '../componets/BackButton';
 
 function PatternView() {
 
@@ -28,10 +29,6 @@ function PatternView() {
 
   if (error) return <div>error: {error.message}</div>
 
-  const handleClose = () => {
-    navigate('/')
-  }
-
   const CenterSpinner = () => {
     return (
       <div className='center'>
@@ -44,9 +41,7 @@ function PatternView() {
     delayedLoading ? <CenterSpinner /> :
       <div>
 
-        <button onClick={handleClose} className="mybutton">
-          <i className="fa-solid fa-arrow-left"></i>
-        </button>
+        <BackButton onPress={() => navigate('/')} />
 
         <PatternModal pattern={pattern} grid={grid} />
 

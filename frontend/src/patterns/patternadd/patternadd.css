@@ -1,40 +1,140 @@
-.container {
-    border: black 1px solid;
-    display: grid;
-    grid-template-rows: repeat(4, auto);
-    gap: 10px;
-}
-
-.grid-row {
-    display: grid;
-    grid-template-columns: 1fr repeat(16, 1fr);
-    gap: 10px;
-}
-
-.row-label {
+.add-container {
     display: flex;
-    grid-column: 1;
+    justify-content: center;
+    flex-direction: column;
+    gap: 12px;
+    overflow: hidden;
+    overflow-x: scroll;
+    margin: 42px 24px 24px 12px;    
+}
+
+.add-grid-row {
+    display: grid;
+    grid-template-columns: repeat(21, 1fr);
+    gap: 10px;
+    justify-content: center;
+}
+
+.add-row-label {
+    background-color: transparent;
+    color: white;
+    height: 34px;
+    font-size: medium;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    border: none;
+    border-bottom: white 1px solid;
+    border-radius: 0;
+    display: flex;
     text-align: center;
     font-weight: bold;
-    padding: 1px;
-    border-radius: 4px;
-    border: none;
+    margin-right: 8px;
+    outline: none;
 }
 
-.grid-button {
+.add-grid-button {
     padding: 10px;
-    background-color: #ddd;
+    background-color: rgba(255, 255, 255, .4);
     border: 1px solid #ccc; 
     cursor: pointer;
     transition: .5s;
 }
 
-.grid-button.active {
-    background-color: #4CAF50;
-    /* Active button background */
+.add-grid-button.dark {
+    background-color: rgba(255, 255, 255, .2);
+}
+
+.add-grid-button.active {
+    background-color: #ff00c1;
+}
+
+.add-grid-button:focus {
+    outline: none;
+}
+
+.add-delete-button {
+    transition: all .2s;
+    background-color: transparent;
+    color: rgba(255, 255, 255, .4);
+    border: none;
+    margin-left: 8px;
+}
+
+.add-delete-button:hover {
+    cursor: pointer;
+    background-color: rgba(255, 0, 0, 0.699);
     color: white;
 }
 
-.grid-button:focus {
+.add-drumrow-button {
+    transition: all .5s;
+    cursor: pointer;
+    margin: 28px 16px 0 16px;
+    background-color: rgba(42, 124, 42, 0.603);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    opacity: .4;
+    height: 20px;
+}
+
+.add-drumrow-button:hover {
+    scale: 1.01;
+    opacity: 1;
+}
+
+.add-button-container {
+    display: flex;
+    justify-content: center;
+}
+
+.add-title {
+    text-align: center;
+    margin-left: 24px;
+    width: 86px;
+    border-bottom: white 1px solid;
+}
+
+.add-title {
+    text-align: center;
+    margin-left: 24px;
+    width: 86px;
+    border-bottom: white 1px solid;
+}
+
+.add-button-submit {
+    margin-top: 46px;
+    font-size: large;
+    transition: background-position .5s .2s, scale .5s;
+    padding: 12px 24px;
+    border-radius: 16px;
+    background: transparent;
+    float: left;
+    border: white 2px solid;
+    color: white;
+    background: linear-gradient(to right, rgba(255, 0, 217, 0.363) 50%, rgba(0, 212, 255, 0) 50%);
+    background-size: 200% 100%;
+    background-position: right bottom;
+}
+
+.add-button-submit:hover {
+    cursor: pointer;
+    scale: 1.2;
+    background-position: left bottom;
+}
+
+.add-desc-container {
+    margin: 64px 24px 12px 24px;
+    display: flex;
+    justify-content: center;
+}
+
+.add-description {
+    width: 100%;
+    height: 42px;
+    text-align: start;
+    border: none;
     outline: none;
+    background-color: #edf2f4;
+    opacity: .8;
 }

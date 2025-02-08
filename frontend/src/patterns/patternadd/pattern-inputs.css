@@ -1,4 +1,35 @@
 .pattern-inputs-container {
+    margin: 0 48px;
     display: grid;
-    grid-template-columns: repeat(3, 2px);
+    justify-content: space-around;
+    grid-template-columns: repeat(2, auto);
+}
+
+.pattern-name-item {
+    display: flex;
+    justify-content: center;
+    grid-column: 1 / 3;
+    width: 100%;
+}
+
+.my-input {
+    transition: opacity .5s;
+    background-color: #edf2f4;
+    opacity: .8;
+    width:  100%;
+    text-align: center;
+    margin: 24px;
+    padding: 12px;
+    border-radius: 12px;
+    border: none;
+}
+
+.my-input:focus {
+    opacity: 1;
+    background-color: white;
+    outline: none;
+}
+
+.my-input.invalid {
+    outline: red 1px solid;
 }

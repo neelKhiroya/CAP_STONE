@@ -4,6 +4,7 @@
     border-top-right-radius: 24px;
     border-top-left-radius: 24px;
     color: black;
+    margin-top: 62px;
 }
 
 .create-container {
@@ -11,20 +12,32 @@
     justify-content: space-around;
 }
 
+@property --a {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+}
+
+@keyframes animate {
+    to {
+        --a: 1turn; 
+    }
+}
+
 .button-create {
-    transition: all 1s;
+    transition: all .2s;
     border: 2px solid transparent;
     padding: 12px 24px;
     border-radius: 24px;
-    background-image: linear-gradient(white, white),
-    linear-gradient(127deg, rgba(231,2,197,1) 0%, rgba(99,1,249,1) 32%, rgba(0,212,255,1) 100%);
+    background-image: linear-gradient(white, white);
     background-origin: border-box;
     background-clip: padding-box, border-box;
 }
 
 .button-create:hover {
+    background-image: linear-gradient(white, white),
+    linear-gradient(var(--a), rgba(231,2,197,1), rgba(99,1,249,1), rgba(0,212,255,1));
     cursor: pointer;
-   box-shadow: 
-   0 0 5px #231942,
-   0 0 10px #5e548e
+    scale: 1.2;
+    animation: animate .5s ease-out;
 }

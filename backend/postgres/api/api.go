@@ -31,6 +31,8 @@ func GetPageniatedPatterns(c *gin.Context) {
 		return
 	}
 
+	fmt.Println(patterns)
+
 	c.JSON(http.StatusOK, patterns)
 }
 

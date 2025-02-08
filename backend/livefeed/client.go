@@ -1,54 +1,65 @@
-// Copyright 2013 The Gorilla WebSocket Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+// client to handle connection
 
 package main
 
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"time"
 
+	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 )
 
+// https://github.com/gorilla/websocket/issues/46
+
+type pattern struct {
+	Username string `json:"username"`
+	Color    string `json:"color"`
+	Row0     string `json:"row0"`
+	Row1     string `json:"row1"`
+	Row2     string `json:"row2"`
+	Row3     string `json:"row3"`
+}
+
+type data struct {
+	Pattern pattern `json:"pattern"`
+	RoomID  string  `json:"roomID"`
+}
+
 const (
-	// Time allowed to write a message to the peer.
+	// max send wait time.
 	writeWait = 10 * time.Second
 
-	// Time allowed to read the next pong message from the peer.
+	// recive ping cooldown.
 	pongWait = 60 * time.Second
 
-	// Send pings to peer with this period. Must be less than pongWait.
+	// send ping and wait.
 	pingPeriod = (pongWait * 9) / 10
 
-	// Maximum message size allowed from peer.
+	// max message size.
 	maxMessageSize = 512
 )
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		// Only allow WebSocket connections from localhost:3000 (React dev server)
+		return r.Header.Get("Origin") == "http://192.168.2.18:5173"
+	},
 }
 
-// Client is a middleman between the websocket connection and the hub.
-type Client struct {
-	hub *Hub
+// middleman between the websocket connection and the hub.
+type client struct {
 
-	// The websocket connection.
-	conn *websocket.Conn
+	// websocket.
+	ws *websocket.Conn
 
-	// Buffered channel of outbound messages.
-	send chan *Message
-}
-
-type Message struct {
-	Username string `json:"username"`
-	Row0     string `json:"row0"`
-	Row1     string `json:"row1"`
-	Row2     string `json:"row2"`
-	Row3     string `json:"row3"`
+	// message channel.
+	send chan *pattern
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -56,17 +67,18 @@ type Message struct {
 // The application runs readPump in a per-connection goroutine. The application
 // ensures that there is at most one reader on a connection by executing all
 // reads from this goroutine.
-func (c *Client) readPump() {
+func (s subscription) readPump() {
+	c := s.client
 	defer func() {
-		c.hub.unregister <- c
-		c.conn.Close()
+		hub.unregister <- s
+		c.ws.Close()
 	}()
-	c.conn.SetReadLimit(maxMessageSize)
-	c.conn.SetReadDeadline(time.Now().Add(pongWait))
-	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
+	c.ws.SetReadLimit(maxMessageSize)
+	c.ws.SetReadDeadline(time.Now().Add(pongWait))
+	c.ws.SetPongHandler(func(string) error { c.ws.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
-		var msg *Message
-		err := c.conn.ReadJSON(&msg)
+		var msg *pattern
+		err := c.ws.ReadJSON(&msg)
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("error: %v", err)
@@ -76,8 +88,8 @@ func (c *Client) readPump() {
 		// message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 
 		//	message is read here!
-
-		c.hub.broadcast <- msg
+		m := message{s.room, msg}
+		hub.broadcast <- m
 	}
 }
 
@@ -87,23 +99,26 @@ func (c *Client) readPump() {
 // application ensures that there is at most one writer to a connection by
 // executing all writes from this goroutine.
 
-func (c *Client) writePump() {
+func (s *subscription) writePump() {
+	c := s.client
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
-		c.conn.Close()
+		c.ws.Close()
 	}()
 	for {
 		select {
 		case message, ok := <-c.send:
-			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+			c.ws.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
 				// The hub closed the channel.
-				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+				c.ws.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
 
-			err := c.conn.WriteJSON(message)
+			dataToGo := data{*message, s.room}
+
+			err := c.ws.WriteJSON(dataToGo)
 			if err != nil {
 				fmt.Println(err)
 				return
@@ -120,30 +135,86 @@ func (c *Client) writePump() {
 			// 	return
 			// }
 		case <-ticker.C:
-			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
-			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+			c.ws.SetWriteDeadline(time.Now().Add(writeWait))
+			if err := c.ws.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
 			}
 		}
 	}
 }
 
+var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+func generateNewRoomID() string {
+	s := make([]rune, 10)
+	for i := range s {
+		s[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(s)
+}
+
 // serveWs handles websocket requests from the peer.
-func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
+func serveWs(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	room := vars["room"]
+
+	if len(room) != 10 && room != "new" {
+		log.Println("invalid roomID: ", room)
+
+		//upgrade to ws just to send back error.
+		ws, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		errorMessage := map[string]string{
+			"error": "roomID is not valid",
+		}
+		ws.WriteJSON(errorMessage)
+		ws.Close()
+		return
+	}
+
+	if _, exists := hub.rooms[room]; !exists && room != "new" {
+		log.Println("non-existing roomID:", room)
+
+		//upgrade to ws just to send back error.
+		ws, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		errorMessage := map[string]string{
+			"error": "room does not exist",
+		}
+		ws.WriteJSON(errorMessage)
+		ws.Close()
+		return
+	}
+
+	//upgrade to ws, to handle roomID return.
+	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
-	client := &Client{
-		hub:  hub,
-		conn: conn,
-		send: make(chan *Message),
-	}
-	client.hub.register <- client
 
-	// Allow collection of memory referenced by the caller by doing all work in
-	// new goroutines.
-	go client.writePump()
-	go client.readPump()
+	if room == "new" {
+		room = generateNewRoomID()
+		log.Println("creating new room: ", room)
+		ws.WriteJSON(room)
+	}
+
+	log.Println("room activity:", room)
+
+	//create send channel and subscribe client to roomID
+	c := &client{send: make(chan *pattern), ws: ws}
+	s := subscription{c, room}
+	hub.register <- s
+
+	//start listening
+	go s.writePump()
+	s.readPump()
 }
