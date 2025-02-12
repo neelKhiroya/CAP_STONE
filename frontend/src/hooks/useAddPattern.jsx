@@ -11,7 +11,7 @@ const useAddPattern = () => {
     setError(null);
 
     try {
-      const response = await axios.post('http://localhost:8440/patterns', pattern, {
+      const response = await axios.post('http://192.168.2.18:8440/patterns', pattern, {
         headers: {
           'Content-Type': 'application/json',
         },

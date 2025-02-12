@@ -7,7 +7,7 @@ function useSearchPattern (patternName) {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        axios.get(`http://localhost:8440/patterns/search`, {
+        axios.get(`http://192.168.2.18:8440/patterns/search`, {
             params: {
                 name: patternName
             }

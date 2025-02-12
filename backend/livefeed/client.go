@@ -204,7 +204,8 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 	if room == "new" {
 		room = generateNewRoomID()
 		log.Println("creating new room: ", room)
-		ws.WriteJSON(room)
+
+		ws.WriteJSON(data{pattern{"", "", "", "", "", ""}, room})
 	}
 
 	log.Println("room activity:", room)

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import PopUp from "../componets/PopUp"
 import BackButton from "../componets/BackButton"
 import { useNavigate } from "react-router-dom"
@@ -23,20 +23,23 @@ export default function PatternCollab() {
     const navagate = useNavigate()
 
     const connectToRoom = (roomID) => {
-        const socket = new WebSocket(`ws://192.168.2.18:7992/ws/${roomID}`);
+        const socket = new WebSocket(`ws://192.168.2.18:7220/ws/${roomID}`);
 
         socket.onopen = () => {
             setWs(socket);
         }
 
         socket.onmessage = (event) => {
-            const message = JSON.parse(event.data);
+            const message = JSON.parse(event.data); 
             if (message.error) {
                 setError(message.error);
                 socket.close();
             } else {
-                setMessages((prevMessages) => [...prevMessages, event.data]);
-                setID(message.roomID)
+                setMessages((prevMessages) => [...prevMessages, JSON.stringify(message.pattern)]);
+                
+                if (message.roomID) {
+                    setID(message.roomID);
+                }
             }
         };
 
@@ -80,9 +83,12 @@ export default function PatternCollab() {
 
     if (ws) return (
         <div>
-            {messages.map(message => {
-                return (<div key={message.id}>{message}</div>)
+            {messages.map((message, index) => {
+                return (
+                    <div key={index} >{message}</div>
+                )
             })}
+            
             <input
                 type="text"
                 value={row0}
@@ -104,7 +110,7 @@ export default function PatternCollab() {
                 onChange={(e) => setRow3(e.target.value)}
                 placeholder="row 3" />
             <button onClick={sendMessage}>send</button>
-            <div>
+            <div key={roomID}>
                 room id: {roomID}
             </div>
         </div>

@@ -8,7 +8,7 @@ function useGetTotalPatternCount() {
 
     useEffect(() => {
         setLoading(true)
-        axios.get('http://localhost:8440/patterns/count')
+        axios.get('http://192.168.2.18:8440/patterns/count')
         .then(response => {
             setCount(response.data.count)
             setLoading(false)
