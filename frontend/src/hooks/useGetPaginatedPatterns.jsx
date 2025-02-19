@@ -8,7 +8,7 @@ function useGetPaginatedPatterns(limit, offset) {
   
     useEffect(() => {
       setLoading(true)
-      axios.get('http://192.168.2.18:8440/patterns', {
+      axios.get('http://localhost:8440/patterns', {
         params: {
           limit, offset
         }

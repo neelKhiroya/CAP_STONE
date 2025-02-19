@@ -7,7 +7,7 @@ function useGetPattern(id) {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        axios.get(`http://192.168.2.18:8440/patterns/${id}`)  // Make API call
+        axios.get(`http://localhost:8440/patterns/${id}`)  // Make API call
             .then(response => {
                 setPattern(response.data);  // Set the fetched data
                 setLoading(false);            // Set loading to false

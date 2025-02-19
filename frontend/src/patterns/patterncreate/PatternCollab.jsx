@@ -1,118 +1,92 @@
 import { useEffect, useState } from "react"
 import PopUp from "../componets/PopUp"
 import BackButton from "../componets/BackButton"
-import { useNavigate } from "react-router-dom"
+import { data, useNavigate } from "react-router-dom"
+import { useWebSocket } from '../../hooks/useWebSocket'
 
 import './pattern-collab.css';
+import PatternCollabView from "./PatternCollabView";
 
 export default function PatternCollab() {
 
     const [roomID, setID] = useState()
-    const [ws, setWs] = useState(null)
-    const [error, setError] = useState(null)
-    const [messages, setMessages] = useState([])
     const [userName, setUserName] = useState('')
-    const [color, setColor] = useState('')
-    const [row0, setRow0] = useState('')
-    const [row1, setRow1] = useState('')
-    const [row2, setRow2] = useState('')
-    const [row3, setRow3] = useState('')
+    const [rows, setRows] = useState(null)
+    const [userColor, setUserColor] = useState(null)
+    const [colors, setColors] = useState(null)
+    const [rowNames, setNames] = useState(["snare", "kick"])
     const [joinPopUp, setJoinPopUp] = useState(false)
     const [createPopUp, setCreatePopUp] = useState(false)
+    const [shouldSendRows, setSendRows] = useState(false)
+    const [error, setError] = useState(null)
 
     const navagate = useNavigate()
 
-    const connectToRoom = (roomID) => {
-        const socket = new WebSocket(`ws://192.168.2.18:7220/ws/${roomID}`);
+    const {ws, messages, userNames, connectToRoom} = useWebSocket(userName, rows, shouldSendRows, setSendRows, setRows, setID, setError);
 
-        socket.onopen = () => {
-            setWs(socket);
-        }
-
-        socket.onmessage = (event) => {
-            const message = JSON.parse(event.data); 
-            if (message.error) {
-                setError(message.error);
-                socket.close();
+    const toggleRowData = (row, col) => {
+        setRows((prevRows) => {
+            const newRows = [...prevRows];
+            const updatedRow = { ...newRows[row] }; 
+            updatedRow.data = [...updatedRow.data];
+            updatedRow.data[col] = !updatedRow.data[col];
+            updatedRow.colors = [...updatedRow.colors];
+            if (updatedRow.colors[col] == '') {
+                updatedRow.colors[col] = userColor;
             } else {
-                setMessages((prevMessages) => [...prevMessages, JSON.stringify(message.pattern)]);
-                
-                if (message.roomID) {
-                    setID(message.roomID);
-                }
+                updatedRow.colors[col] = ''
             }
-        };
-
-        socket.onerror = (error) => {
-            setError(`WebSocket error: ${error.message}`);
-        };
-
-        socket.onclose = () => {
-            setWs(null)
-        }
+            newRows[row] = updatedRow;
+            return newRows;
+        });
+        setSendRows(true);
     }
 
-    const sendMessage = () => {
-        if (ws && userName) {
-            const patternMessage = {
-                username: userName,
-                color: color,
-                row0: row0,
-                row1: row1,
-                row2: row2,
-                row3: row3,
-            };
-
-            ws.send(JSON.stringify(patternMessage))
-        }
-    }
+    let templateNames = ["Snare", "Kick", "Closed Hat", "Open Hat", "808"];
 
     const handleCreateRoom = () => {
         setCreatePopUp(true);
-        setColor('blue')
+        let colors = Array(16).fill("")
+        let rowData = Array(16).fill(false)
+
+        const myRow = {
+            colors: colors,
+            data: rowData,
+            name: 'snare',
+        }
+
+        let temprows = Array(2).fill(myRow)
+        setRows(temprows)
+        setSendRows(true)
+        setUserColor('blue')
     }
 
     const handleJoinRoom = () => {
-        setJoinPopUp(true)
-        setColor('purple')
+        setJoinPopUp(true);
+        setUserColor('green')
     }
 
     if (error) return (
-        <div>{error}</div>
+        <div>
+             <BackButton onPress={() =>  setError(null)} />
+                {error} (roomID: {roomID})
+                </div>
     )
 
     if (ws) return (
         <div>
-            {messages.map((message, index) => {
+            <BackButton onPress={() => ws.close() } />
+            connected users in room ({roomID}): <ul>{userNames.map(name => {
                 return (
-                    <div key={index} >{message}</div>
+                    <li>{name}</li>
                 )
-            })}
-            
-            <input
-                type="text"
-                value={row0}
-                onChange={(e) => setRow0(e.target.value)}
-                placeholder="row 0" />
-            <input
-                type="text"
-                value={row1}
-                onChange={(e) => setRow1(e.target.value)}
-                placeholder="row 1" />
-            <input
-                type="text"
-                value={row2}
-                onChange={(e) => setRow2(e.target.value)}
-                placeholder="row 2" />
-            <input
-                type="text"
-                value={row3}
-                onChange={(e) => setRow3(e.target.value)}
-                placeholder="row 3" />
-            <button onClick={sendMessage}>send</button>
-            <div key={roomID}>
-                room id: {roomID}
-            </div>
+            })}</ul>
+            <PatternCollabView
+                websocket={ws}
+                rows={rows}
+                updaterows={setRows}
+                ontoggle={toggleRowData}
+            />
         </div>
     )
 
@@ -144,18 +118,18 @@ export default function PatternCollab() {
                 onSubmit={() => connectToRoom(roomID)}
             >
                 <div className="collab-input-group">
-                <input
+                    <input
                         type="input"
                         className="collab-input"
                         placeholder="username"
                         required
                         value={userName}
                         onChange={(e) => setUserName(e.target.value)} />
-                   <label htmlFor="username" className="collab-label">username</label>
-                   </div>
-                   <div className="collab-input-group" style={{marginTop: '12px'}}>
+                    <label htmlFor="username" className="collab-label">username</label>
+                </div>
+                <div className="collab-input-group" style={{ marginTop: '12px' }}>
                     <input
-                    className="collab-input"
+                        className="collab-input"
                         placeholder="roomID"
                         onChange={(e) => setID(e.target.value)}
                         value={roomID}
@@ -165,8 +139,8 @@ export default function PatternCollab() {
                     <label
                         htmlFor="roomID"
                         className="collab-label">
-                            roomID
-                        </label>
+                        roomID
+                    </label>
                 </div>
             </PopUp>
 

@@ -3,17 +3,14 @@
 package main
 
 import (
+	"fmt"
 	"log"
 )
 
-type message struct {
-	room string
-	data *pattern
-}
-
 type subscription struct {
-	client *client
-	room   string
+	client   *client
+	room     string
+	username string
 }
 
 // Hub maintains the set of active clients and broadcasts messages to the
@@ -22,21 +19,51 @@ type Hub struct {
 	// Registered clients.
 	rooms map[string]map[*client]bool
 
+	//users
+	usernames map[string][]string
+
 	// Inbound messages from the clients.
-	broadcast chan message
+	broadcast chan data
 
 	// Register requests from the clients.
 	register chan subscription
 
 	// Unregister requests from clients.
 	unregister chan subscription
+
+	// last message sent
+	lastMessage map[string]*pattern
 }
 
 var hub = Hub{
-	broadcast:  make(chan message),
-	register:   make(chan subscription),
-	unregister: make(chan subscription),
-	rooms:      make(map[string]map[*client]bool),
+	broadcast:   make(chan data),
+	register:    make(chan subscription),
+	unregister:  make(chan subscription),
+	rooms:       make(map[string]map[*client]bool),
+	usernames:   make(map[string][]string),
+	lastMessage: make(map[string]*pattern),
+}
+
+func broadcast(connections map[*client]bool, m data) {
+	for c := range connections {
+		select {
+		case c.send <- &m:
+			hub.lastMessage[m.RoomID] = &m.Pattern
+			fmt.Printf("sending %v for room: %s\n", m.Pattern.Rows, m.RoomID)
+			c.send <- &data{
+				m.Pattern,
+				m.RoomID,
+				hub.usernames[m.RoomID],
+			}
+		default:
+			close(c.send)
+			delete(connections, c)
+			if len(connections) == 0 {
+				delete(hub.rooms, m.RoomID)
+				delete(hub.usernames, m.RoomID)
+			}
+		}
+	}
 }
 
 func (h *Hub) run() {
@@ -57,6 +84,7 @@ func (h *Hub) run() {
 			if connections == nil {
 				connections = make(map[*client]bool)
 				h.rooms[s.room] = connections
+				h.usernames[s.room] = []string{} //init username list
 				log.Println("new room created: ", s.room)
 			}
 			if len(connections) >= 3 {
@@ -68,30 +96,69 @@ func (h *Hub) run() {
 			}
 
 			h.rooms[s.room][s.client] = true
+			h.usernames[s.room] = append(h.usernames[s.room], s.username)
+			fmt.Printf("%s is joining!\n", s.username)
+
+			if lastMsg, ok := h.lastMessage[s.room]; ok {
+				fmt.Printf("sending last message + updated users\n")
+				m := data{
+					Pattern: *lastMsg,
+					RoomID:  s.room,
+					Users:   h.usernames[s.room],
+				}
+				broadcast(connections, m)
+			} else {
+				m := data{
+					Pattern: pattern{},
+					RoomID:  s.room,
+					Users:   h.usernames[s.room],
+				}
+				broadcast(connections, m)
+			}
+
 		case s := <-h.unregister:
 			connections := h.rooms[s.room]
 			if connections != nil {
 				if _, ok := connections[s.client]; ok {
 					delete(connections, s.client)
 					close(s.client.send)
+
+					//remove username
+					for i, username := range h.usernames[s.room] {
+						if username == s.username {
+							h.usernames[s.room] = append(h.usernames[s.room][:i], h.usernames[s.room][i+1:]...)
+							break
+						}
+					}
+					//delete room
 					if len(connections) == 0 {
 						delete(h.rooms, s.room)
+						delete(h.usernames, s.room)
 					}
+
+					if lastMsg, ok := h.lastMessage[s.room]; ok {
+						m := data{
+							Pattern: *lastMsg,
+							RoomID:  s.room,
+							Users:   hub.usernames[s.room],
+						}
+						broadcast(connections, m)
+					} else {
+						m := data{
+							Pattern: pattern{},
+							RoomID:  s.room,
+							Users:   hub.usernames[s.room],
+						}
+						broadcast(connections, m)
+					}
+
 				}
 			}
+
 		case m := <-h.broadcast:
-			connections := h.rooms[m.room]
-			for c := range connections {
-				select {
-				case c.send <- m.data:
-				default:
-					close(c.send)
-					delete(connections, c)
-					if len(connections) == 0 {
-						delete(h.rooms, m.room)
-					}
-				}
-			}
+			connections := h.rooms[m.RoomID]
+
+			broadcast(connections, m)
 		}
 	}
 }

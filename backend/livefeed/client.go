@@ -15,18 +15,21 @@ import (
 
 // https://github.com/gorilla/websocket/issues/46
 
+type row struct {
+	Colors []string `json:"colors"`
+	Data   []bool   `json:"data"`
+	Name   string   `json:"name"`
+}
+
 type pattern struct {
 	Username string `json:"username"`
-	Color    string `json:"color"`
-	Row0     string `json:"row0"`
-	Row1     string `json:"row1"`
-	Row2     string `json:"row2"`
-	Row3     string `json:"row3"`
+	Rows     []row  `json:"rows"`
 }
 
 type data struct {
-	Pattern pattern `json:"pattern"`
-	RoomID  string  `json:"roomID"`
+	Pattern pattern  `json:"pattern"`
+	RoomID  string   `json:"roomID"`
+	Users   []string `json:"users"`
 }
 
 const (
@@ -48,7 +51,7 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
 		// Only allow WebSocket connections from localhost:3000 (React dev server)
-		return r.Header.Get("Origin") == "http://192.168.2.18:5173"
+		return r.Header.Get("Origin") == "http://localhost:5173"
 	},
 }
 
@@ -59,7 +62,7 @@ type client struct {
 	ws *websocket.Conn
 
 	// message channel.
-	send chan *pattern
+	send chan *data
 }
 
 // readPump pumps messages from the websocket connection to the hub.
@@ -88,7 +91,11 @@ func (s subscription) readPump() {
 		// message = bytes.TrimSpace(bytes.Replace(message, newline, space, -1))
 
 		//	message is read here!
-		m := message{s.room, msg}
+		m := data{
+			*msg,
+			s.room,
+			hub.usernames[s.room],
+		}
 		hub.broadcast <- m
 	}
 }
@@ -116,7 +123,11 @@ func (s *subscription) writePump() {
 				return
 			}
 
-			dataToGo := data{*message, s.room}
+			dataToGo := data{
+				message.Pattern,
+				s.room,
+				hub.usernames[s.room],
+			}
 
 			err := c.ws.WriteJSON(dataToGo)
 			if err != nil {
@@ -194,7 +205,7 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//upgrade to ws, to handle roomID return.
+	//upgrade to ws, and to handle roomID return.
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
@@ -203,16 +214,29 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 
 	if room == "new" {
 		room = generateNewRoomID()
-		log.Println("creating new room: ", room)
-
-		ws.WriteJSON(data{pattern{"", "", "", "", "", ""}, room})
+		ws.WriteJSON(data{pattern{"", []row{}}, room, []string{}})
 	}
 
-	log.Println("room activity:", room)
+	var initialMessage struct {
+		Username string `json:"username"`
+	}
+
+	err = ws.ReadJSON(&initialMessage)
+	if err != nil {
+		fmt.Printf("error reading user via: %v\n", err)
+
+		errorMessage := map[string]string{
+			"error": "invalid username",
+		}
+
+		ws.WriteJSON(errorMessage)
+		ws.Close()
+		return
+	}
 
 	//create send channel and subscribe client to roomID
-	c := &client{send: make(chan *pattern), ws: ws}
-	s := subscription{c, room}
+	c := &client{send: make(chan *data), ws: ws}
+	s := subscription{c, room, initialMessage.Username}
 	hub.register <- s
 
 	//start listening
