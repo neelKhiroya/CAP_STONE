@@ -5,6 +5,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"slices"
 )
 
 type subscription struct {
@@ -33,6 +34,9 @@ type Hub struct {
 
 	// last message sent
 	lastMessage map[string]*pattern
+
+	//	ready users
+	readyUsers map[string][]string
 }
 
 var hub = Hub{
@@ -42,6 +46,7 @@ var hub = Hub{
 	rooms:       make(map[string]map[*client]bool),
 	usernames:   make(map[string][]string),
 	lastMessage: make(map[string]*pattern),
+	readyUsers:  make(map[string][]string),
 }
 
 func broadcast(connections map[*client]bool, m data) {
@@ -49,11 +54,24 @@ func broadcast(connections map[*client]bool, m data) {
 		select {
 		case c.send <- &m:
 			hub.lastMessage[m.RoomID] = &m.Pattern
-			fmt.Printf("sending %v for room: %s\n", m.Pattern.Rows, m.RoomID)
+			if m.SendReady && !slices.Contains(hub.readyUsers[m.RoomID], m.Pattern.Username) {
+				hub.readyUsers[m.RoomID] = append(hub.readyUsers[m.RoomID], m.Pattern.Username)
+				fmt.Printf("there is %d users ready\n", len(hub.readyUsers[m.RoomID]))
+			} else if m.SendReady && slices.Contains(hub.readyUsers[m.RoomID], m.Pattern.Username) {
+				for i, username := range hub.usernames[m.RoomID] {
+					if username == m.Pattern.Username {
+						hub.usernames[m.RoomID] = append(hub.readyUsers[m.RoomID][:i], hub.readyUsers[m.RoomID][i+1:]...)
+						break
+					}
+				}
+			}
+
+			fmt.Printf("sending %v for room: %s\n", m.Pattern.Descrip, m.RoomID)
 			c.send <- &data{
 				m.Pattern,
 				m.RoomID,
 				hub.usernames[m.RoomID],
+				len(hub.readyUsers[m.RoomID]) == len(hub.usernames[m.RoomID]),
 			}
 		default:
 			close(c.send)

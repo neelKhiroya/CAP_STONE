@@ -89,7 +89,7 @@
 
 .collab-input-group {
     position: relative;
-    padding: 20px 20px 0 20px ;
+    padding: 20px 20px 0 20px;
     width: 100%;
     max-width: 180px;
 }
@@ -149,4 +149,57 @@
 .collab-input:required,
 .collab-input:invalid {
     box-shadow: none;
+}
+
+.collab-top-bar-contianer {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-bottom: 86px;
+}
+
+.color-container {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.collab-colors {
+    cursor: pointer;
+    border-radius: 4px;
+    border: none;
+    padding: 16px;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+}
+
+.collab-info-container {
+    margin-top: 124px;
+}
+
+.collab-info-box {
+    display: flex;
+    justify-content: space-around;
+}
+
+.collab-info-label {
+    text-align: center;
+}
+
+.collab-info-input {
+    padding: 4px;
+    outline: none;
+    border: none;
+    background-color: transparent;
+    color: white;
+    border-bottom: white 2px solid;
+}
+
+.collab-add-desc-container {
+    display: flex;
+    justify-content: start;
+    align-items: start;
+    flex-direction: column;
+    margin: 42px 68px 0 68px;
+    text-align: start;
 }

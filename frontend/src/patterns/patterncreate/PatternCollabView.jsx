@@ -1,45 +1,63 @@
-import { useState, React, useEffect } from 'react';
+import { React } from 'react';
 import PropTypes from 'prop-types';
 
 import './pattern-collab-view.css'
 
 const propTypes = {
     rows: PropTypes.array,
-    updaterows: PropTypes.func.isRequired,
+    onToggle: PropTypes.func.isRequired,
+    onRowNameChange: PropTypes.func.isRequired,
+    toggleAddRow: PropTypes.func.isRequired,
+    toggleRemoveRow: PropTypes.func.isRequired,
 };
 
 const defaultProps = {};
 
 const PatternCollabView = ({
     rows,
-    ontoggle,
+    onToggle,
+    onRowNameChange,
+    toggleAddRow,
+    toggleRemoveRow,
 }) => {
 
     return (
-        <div className='collab-add-containerr'>
+        <div className='collab-add-container'>
             {rows && rows.map((row, rowIndex) => {
                 return (
                     <div className='collab-add-grid-row' key={rowIndex}>
+                        <input
+                            key={rowIndex}
+                            value={row.name}
+                            onChange={(e) => onRowNameChange(e, rowIndex)}
+                            className='collab-add-row-label'
+                        />
                         {row.data.map((_, colIndex) => {
-                            
                             return (
-                                <div key={colIndex}>
+                                <>
                                     <button
-                                        onClick={() => ontoggle(rowIndex, colIndex)}
+                                        onClick={() => onToggle(rowIndex, colIndex)}
                                         className='collab-add-grid-button'
                                         style={{
-                                            backgroundColor: row.data[colIndex] ? row.colors[colIndex] : 'white', 
+                                            backgroundColor: row.data[colIndex] ? row.colors[colIndex] : (
+                                                colIndex % 8 >= 4 ? 'gray' : 'black'
+                                            ),
                                         }}
                                     >
                                     </button>
-                                    {colIndex % 4 == 3 && colIndex < 12 ? <div style={{margin: '0 38px'}}></div> : <></>}
-                                </div>
+                                    {colIndex != 0 && colIndex % 4 == 3 ? // 3 for last in bar
+                                        <div style={{ margin: '0 8px' }}></div> :
+                                        <></>}
+                                </>
                             )
                         })}
+                        <button onClick={() => toggleRemoveRow(rowIndex)} className='collab-trash'>
+                            <i className="fa-solid fa-trash" />
+                        </button>
                     </div>
                 )
-
             })}
+            <button className='collab-add-row' onClick={toggleAddRow}>+</button>
         </div>);
 }
 

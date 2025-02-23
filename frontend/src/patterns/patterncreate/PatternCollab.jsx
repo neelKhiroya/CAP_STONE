@@ -1,48 +1,89 @@
 import { useEffect, useState } from "react"
 import PopUp from "../componets/PopUp"
 import BackButton from "../componets/BackButton"
-import { data, useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { useWebSocket } from '../../hooks/useWebSocket'
 
 import './pattern-collab.css';
 import PatternCollabView from "./PatternCollabView";
+import PatternCollabConnected from "./PatternCollabConnected"
+import useAddPattern from "../../hooks/useAddPattern"
+import { convertGridAndNamesToStrings } from "../../util/convertStringsAndGrids"
 
 export default function PatternCollab() {
 
     const [roomID, setID] = useState()
-    const [userName, setUserName] = useState('')
-    const [rows, setRows] = useState(null)
+    const [userName, setUserName] = useState('testie')
     const [userColor, setUserColor] = useState(null)
-    const [colors, setColors] = useState(null)
-    const [rowNames, setNames] = useState(["snare", "kick"])
     const [joinPopUp, setJoinPopUp] = useState(false)
     const [createPopUp, setCreatePopUp] = useState(false)
     const [shouldSendRows, setSendRows] = useState(false)
-    const [error, setError] = useState(null)
+    const [wsError, setError] = useState(null)
+    const { loading, error, addPattern } = useAddPattern();
+    const [sentSucessful, setSuccess] = useState(0)
+
+    const [pattern, setPattern] = useState({
+        username: '',
+        title: '',
+        author: '',
+        descrip: '',
+        rows: [],
+    })
+
+    useEffect(() => {
+        setPattern({ ...pattern, username: userName })
+        setSendRows(true)
+    }, [userName])
 
     const navagate = useNavigate()
 
-    const {ws, messages, userNames, connectToRoom} = useWebSocket(userName, rows, shouldSendRows, setSendRows, setRows, setID, setError);
+    const { ws, messages, userNames, connectToRoom } = useWebSocket(pattern, shouldSendRows, setSendRows, setPattern, setID, setError);
 
-    const toggleRowData = (row, col) => {
-        setRows((prevRows) => {
-            const newRows = [...prevRows];
-            const updatedRow = { ...newRows[row] }; 
-            updatedRow.data = [...updatedRow.data];
-            updatedRow.data[col] = !updatedRow.data[col];
-            updatedRow.colors = [...updatedRow.colors];
-            if (updatedRow.colors[col] == '') {
-                updatedRow.colors[col] = userColor;
+    const selectableColors = ['#fb5607', '#ff006e', '#8338ec', '#3a86ff']
+
+    useEffect(() => {
+            console.log("names", userNames)
+    }, [userNames])
+
+    const postPattern = () => {
+
+        let combinedUsernames = ''
+        userNames.map((name, index) => {
+            if (index == 0) {
+                combinedUsernames += name
             } else {
-                updatedRow.colors[col] = ''
+                combinedUsernames += ` & ${name}`
             }
-            newRows[row] = updatedRow;
-            return newRows;
-        });
-        setSendRows(true);
-    }
+        })
 
-    let templateNames = ["Snare", "Kick", "Closed Hat", "Open Hat", "808"];
+        let convertedRowNames = []
+        let convertedDrumRows = []
+
+        pattern.rows.map(row => {
+            convertedRowNames.push(row.name)
+            convertedDrumRows.push(row.data)
+        })
+
+        const namesAndStrings = convertGridAndNamesToStrings(convertedDrumRows, convertedRowNames)
+
+        const patternToGo = {
+            name: pattern.title,
+            username: combinedUsernames,
+            author: pattern.author,
+            description: pattern.descrip,
+            drumrows: namesAndStrings,
+        }
+
+        // const result = addPattern(patternToGo)
+        // if (result) {
+        //     setSuccess(1);
+        // } else {
+        //     sentSucessful(-1);
+        // }
+        ws.send(JSON.stringify({
+            sendready: true,
+        }))
+    }
 
     const handleCreateRoom = () => {
         setCreatePopUp(true);
@@ -56,38 +97,45 @@ export default function PatternCollab() {
         }
 
         let temprows = Array(2).fill(myRow)
-        setRows(temprows)
+        setPattern({ ...pattern, rows: temprows })
         setSendRows(true)
-        setUserColor('blue')
     }
 
     const handleJoinRoom = () => {
         setJoinPopUp(true);
-        setUserColor('green')
     }
 
-    if (error) return (
+    if (wsError) return (
         <div>
-             <BackButton onPress={() =>  setError(null)} />
-                {error} (roomID: {roomID})
-                </div>
+            <BackButton onPress={() => setError(null)} />
+            {wsError} (roomID: {roomID})
+        </div>
+    )
+
+    if (loading) return (
+        <div>
+            loading
+        </div>
+    )
+
+    if (sentSucessful) return (
+        <h1>
+            sent!
+            <button onClick={() => navagate('/')} >home</button>
+        </h1>
     )
 
     if (ws) return (
-        <div>
-            <BackButton onPress={() => ws.close() } />
-            connected users in room ({roomID}): <ul>{userNames.map(name => {
-                return (
-                    <li>{name}</li>
-                )
-            })}</ul>
-            <PatternCollabView
-                websocket={ws}
-                rows={rows}
-                updaterows={setRows}
-                ontoggle={toggleRowData}
-            />
-        </div>
+        <PatternCollabConnected
+            ws={ws}
+            roomID={roomID}
+            userNames={userNames}
+            userColor={userColor}
+            pattern={pattern}
+            usePattern={setPattern}
+            sendPattern={setSendRows}
+            postPattern={postPattern}
+        />
     )
 
     return (
@@ -97,7 +145,11 @@ export default function PatternCollab() {
                 prompt=""
                 isOpen={createPopUp}
                 onCancel={() => setCreatePopUp(false)}
-                onSubmit={() => connectToRoom("new")}
+                onSubmit={() => {
+                    if (userColor && pattern.username) {
+                        connectToRoom('new')
+                    }
+                }}
             >
                 <div className="collab-input-group field">
                     <input
@@ -108,6 +160,13 @@ export default function PatternCollab() {
                         value={userName}
                         onChange={(e) => setUserName(e.target.value)} />
                     <label htmlFor="username" className="collab-label">username</label>
+                    <div className="color-container">
+                        {selectableColors.map(color => {
+                            return (
+                                <button className="collab-colors" style={{ backgroundColor: color, outline: userColor == color ? 'purple 2px solid' : 'none' }} onClick={() => setUserColor(color)}></button>
+                            )
+                        })}
+                    </div>
                 </div>
             </PopUp>
 
@@ -123,8 +182,8 @@ export default function PatternCollab() {
                         className="collab-input"
                         placeholder="username"
                         required
-                        value={userName}
-                        onChange={(e) => setUserName(e.target.value)} />
+                        value={pattern.username}
+                        onChange={(e) => setPattern({ ...pattern, username: e.target.value })} />
                     <label htmlFor="username" className="collab-label">username</label>
                 </div>
                 <div className="collab-input-group" style={{ marginTop: '12px' }}>
@@ -141,6 +200,13 @@ export default function PatternCollab() {
                         className="collab-label">
                         roomID
                     </label>
+                    <div className="color-container">
+                        {selectableColors.map(color => {
+                            return (
+                                <button className="collab-colors" style={{ backgroundColor: color, outline: userColor == color ? 'purple 2px solid' : 'none' }} onClick={() => setUserColor(color)}></button>
+                            )
+                        })}
+                    </div>
                 </div>
             </PopUp>
 

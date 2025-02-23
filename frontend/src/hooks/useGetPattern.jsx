@@ -2,19 +2,20 @@ import axios from 'axios';
 import { useState, useEffect } from 'react';
 
 function useGetPattern(id) {
+    const api = import.meta.env.VITE_API_URL;
     const [pattern, setPattern] = useState();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        axios.get(`http://localhost:8440/patterns/${id}`)  // Make API call
+        axios.get(`${api}/patterns/${id}`)  
             .then(response => {
-                setPattern(response.data);  // Set the fetched data
-                setLoading(false);            // Set loading to false
+                setPattern(response.data);  
+                setLoading(false);          
             })
             .catch(caughtError => {
-                setError(caughtError);        // Set any error that occurs
-                setLoading(false);            // Set loading to false
+                setError(caughtError);      
+                setLoading(false);          
             });
     }, [id]);
 

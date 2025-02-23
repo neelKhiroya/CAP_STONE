@@ -3,6 +3,7 @@ import axios from 'axios';
 
 // add dat patty
 const useAddPattern = () => {
+  const api = import.meta.env.VITE_API_URL
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -11,7 +12,7 @@ const useAddPattern = () => {
     setError(null);
 
     try {
-      const response = await axios.post('http://localhost:8440/patterns', pattern, {
+      const response = await axios.post(`${api}/patterns`, pattern, {
         headers: {
           'Content-Type': 'application/json',
         },

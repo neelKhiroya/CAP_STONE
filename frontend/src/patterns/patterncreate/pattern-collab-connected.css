@@ -1,0 +1,20 @@
+.collab-add-pattern-conatiner {
+    margin-top: 48px;
+    padding: 24px;
+    display: flex;
+    justify-content: center;
+}
+
+.collab-add-pattern-button {
+    font-family: inherit !important;
+    font-size: large;
+    transition: all .5s;
+    cursor: pointer;
+    padding: 12px 48px;
+    border-radius: 8px;
+    border: none;
+}
+
+.collab-add-pattern-button:hover {
+    background-color: rgba(87, 255, 87, 0.783);
+}

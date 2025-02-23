@@ -23,13 +23,17 @@ type row struct {
 
 type pattern struct {
 	Username string `json:"username"`
+	Title    string `json:"title"`
+	Author   string `json:"author"`
+	Descrip  string `json:"descrip"`
 	Rows     []row  `json:"rows"`
 }
 
 type data struct {
-	Pattern pattern  `json:"pattern"`
-	RoomID  string   `json:"roomID"`
-	Users   []string `json:"users"`
+	Pattern   pattern  `json:"pattern"`
+	RoomID    string   `json:"roomID"`
+	Users     []string `json:"users"`
+	SendReady bool     `json:"sendready"`
 }
 
 const (
@@ -43,7 +47,7 @@ const (
 	pingPeriod = (pongWait * 9) / 10
 
 	// max message size.
-	maxMessageSize = 512
+	maxMessageSize = 1536
 )
 
 var upgrader = websocket.Upgrader{
@@ -80,7 +84,7 @@ func (s subscription) readPump() {
 	c.ws.SetReadDeadline(time.Now().Add(pongWait))
 	c.ws.SetPongHandler(func(string) error { c.ws.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
-		var msg *pattern
+		var msg *data
 		err := c.ws.ReadJSON(&msg)
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
@@ -92,9 +96,10 @@ func (s subscription) readPump() {
 
 		//	message is read here!
 		m := data{
-			*msg,
+			msg.Pattern,
 			s.room,
 			hub.usernames[s.room],
+			msg.SendReady,
 		}
 		hub.broadcast <- m
 	}
@@ -127,6 +132,7 @@ func (s *subscription) writePump() {
 				message.Pattern,
 				s.room,
 				hub.usernames[s.room],
+				len(hub.readyUsers[s.room]) == len(hub.usernames[s.room]),
 			}
 
 			err := c.ws.WriteJSON(dataToGo)
@@ -214,7 +220,7 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 
 	if room == "new" {
 		room = generateNewRoomID()
-		ws.WriteJSON(data{pattern{"", []row{}}, room, []string{}})
+		ws.WriteJSON(data{pattern{"", "", "", "", []row{}}, room, []string{}, false})
 	}
 
 	var initialMessage struct {

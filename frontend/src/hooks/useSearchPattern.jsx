@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 
 function useSearchPattern (patternName) {
+    const api = import.meta.env.VITE_API_URL
     const [patterns, setPatterns] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        axios.get(`http://localhost:8440/patterns/search`, {
+        axios.get(`${api}/patterns/search`, {
             params: {
                 name: patternName
             }

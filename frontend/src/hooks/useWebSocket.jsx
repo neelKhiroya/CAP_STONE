@@ -1,54 +1,65 @@
-import {useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
-export function useWebSocket(username, rows, shouldSendRows, setSendRows, setRows, setID, setError) {
-
+export function useWebSocket(pattern, shouldSendRows, setSendRows, setPattern, setID, setError) {
+    const api = import.meta.env.VITE_WS_URL
     const [ws, setWs] = useState(null)
     const [messages, setMessages] = useState([])
     const [userNames, setUserNames] = useState([])
 
+    const sendData = () => {
+        ws.send(JSON.stringify(pattern))
+        setSendRows(false);
+        console.log('sending data!', pattern)
+    }
+
     // handles sending data
     useEffect(() => {
-        if (shouldSendRows && ws && rows != null) {
-            const patternToGo = {
-                username: username,
-                rows: rows
-            }
-            ws.send(JSON.stringify(patternToGo))
-            setSendRows(false);
-            console.log('sending data!', patternToGo)
+        if (shouldSendRows && ws && pattern.rows != null) {
+            const timeoutID = setTimeout(() => {
+                sendData()
+            }, 250)
+            return () => clearTimeout(timeoutID)
         }
-    }, [ws, rows, shouldSendRows])
+    }, [ws, pattern, shouldSendRows])
 
     // handles connecting to room
     const connectToRoom = (roomID) => {
-        const socket = new WebSocket(`ws://localhost:7220/ws/${roomID}`);
+        const socket = new WebSocket(`${api}/ws/${roomID}`);
 
         socket.onopen = () => {
             console.log("connected to room!");
             setWs(socket);
 
-            const userNameToGo = {
-                username: username,
-                rows: rows,
+            const userName = {
+                username: pattern.username,
             }
-            socket.send(JSON.stringify(userNameToGo))
+            socket.send(JSON.stringify(userName))
         }
 
         socket.onmessage = (event) => {
             const message = JSON.parse(event.data);
+            if (message.sent) {
+                console.log('caught')
+            }
             if (message.error) {
                 setError(message.error);
                 socket.close();
             } else {
                 setMessages((prevMessages) => [...prevMessages, JSON.stringify(message.pattern)]);
                 if (message.pattern.rows.length >= 1) {
-                    console.log('recived new data!')
-                    setRows(message.pattern.rows)
+                    setPattern({
+                        username: message.pattern.username,
+                        title: message.pattern.title,
+                        author: message.pattern.author,
+                        descrip: message.pattern.descrip,
+                        rows: message.pattern.rows,
+                    })
                 }
                 if (message.roomID) {
                     setID(message.roomID);
                 }
                 if (message.users) {
+                    console.log(message.users)
                     setUserNames(message.users)
                 }
             }

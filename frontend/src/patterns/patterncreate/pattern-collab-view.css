@@ -1,16 +1,15 @@
 .collab-add-container {
     display: flex;
     justify-content: center;
+    align-items: center;
     flex-direction: column;
     gap: 12px;
-    overflow: hidden;
     overflow-x: scroll;
-    margin: 42px 24px 24px 12px;    
 }
 
 .collab-add-grid-row {
     display: grid;
-    grid-template-columns: repeat(21, 1fr);
+    grid-template-columns: repeat(22, auto);
     gap: 10px;
     justify-content: center;
 }
@@ -33,11 +32,12 @@
 }
 
 .collab-add-grid-button {
-    padding: 10px;
+    padding: 24px;
     background-color: rgba(255, 255, 255, .4);
     border: 1px solid #ccc; 
     cursor: pointer;
     transition: .5s;
+    border-radius: 4px;
 }
 
 .collab-add-grid-button.dark {
@@ -88,9 +88,42 @@
     justify-content: center;
 }
 
-.add-title {
+.collab-add-title {
     text-align: center;
     margin-left: 24px;
     width: 86px;
     border-bottom: white 1px solid;
+}
+
+.collab-trash {
+    border-radius: 4px;
+    transition: all .5s;
+    padding: 0 16px;
+    cursor: pointer;
+    border: none;
+    background-color: transparent;
+    color: white;
+}
+
+.collab-trash:hover{
+    background-color: rgba(255, 255, 255, 0.291);
+    color: red;
+}
+
+.collab-add-row {
+    font-size: larger;
+    cursor: pointer;
+    transition: all .5s;
+    width: 60%;
+    background-color: rgba(255, 255, 255, 0.138);
+    border: none;
+    color: rgb(36, 185, 36);
+    opacity: .8;
+    border-radius: 8px;
+    padding: 8px 0;
+}
+
+.collab-add-row:hover{
+    background-color: rgba(255, 255, 255, 0.424);
+    opacity: 1;
 }

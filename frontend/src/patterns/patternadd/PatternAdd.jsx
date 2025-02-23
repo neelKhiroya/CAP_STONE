@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 
 const PatternAdd = () => {
 
-  const { loading, error, addPattern } = useAddPattern(); // Use the custom hook
+  const { loading, error, addPattern } = useAddPattern();
   const navagate = useNavigate()
 
   const [pattern, setPattern] = useState({
