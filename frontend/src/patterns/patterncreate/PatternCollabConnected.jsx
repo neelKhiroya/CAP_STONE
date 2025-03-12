@@ -1,4 +1,3 @@
-import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import BackButton from '../componets/BackButton';
 import PatternCollabView from './PatternCollabView';
@@ -7,121 +6,166 @@ import './pattern-collab-connected.css'
 
 const propTypes = {
     ws: PropTypes.any.isRequired,
-    roomID: PropTypes.string,
-    userColor: PropTypes.string,
-    userNames: PropTypes.array.isRequired,
-    pattern: PropTypes.object.isRequired,
-    usePattern: PropTypes.func.isRequired,
-    sendPattern: PropTypes.func.isRequired,
-    postPattern: PropTypes.func.isRequired,
+    userColor: PropTypes.string.isRequired,
+    data: PropTypes.object.isRequired,
+    useData: PropTypes.func.isRequired,
+    sendData: PropTypes.func.isRequired,
+    toggleReady: PropTypes.func.isRequired,
+    postData: PropTypes.func.isRequired,
 };
 
 const defaultProps = {
-    roomID: '0',
     userColor: 'yellow'
 };
 
 const PatternCollabConnected = ({
     ws,
-    roomID,
-    userNames,
     userColor,
-    pattern,
-    usePattern,
-    sendPattern,
-    postPattern,
+    data,
+    useData,
+    sendData,
+    toggleReady,
+    postData,
 }) => {
 
     const templateNames = ["Snare", "Kick", "Closed Hat", "Open Hat", "808"];
 
-    const toggleRowData = (row, col) => {
-        usePattern((prevPattern) => {
+    const ToggleRowData = (row, col) => {
+        useData((prevData) => {
 
-            const newRows = [...prevPattern.rows]
-            const updatedRow = { ...newRows[row] };
+            const updatedPattern = { ...prevData.pattern, rows: [...prevData.pattern.rows] };
+            const updatedRow = { ...updatedPattern.rows[row] };
+            updatedRow.data = [...updatedRow.data]; //deep copy..?
+            updatedRow.colors = [...updatedRow.colors]; //another deepie...?
 
-            updatedRow.data = [...updatedRow.data];
-            updatedRow.data[col] = !updatedRow.data[col];
+            updatedRow.data[col] = !updatedRow.data[col]; // bool toggle
 
-            updatedRow.colors = [...updatedRow.colors];
-            if (updatedRow.colors[col] == '') {
+            if (updatedRow.colors[col] == '') { // color toggle
                 updatedRow.colors[col] = userColor;
             } else {
                 updatedRow.colors[col] = ''
             }
 
-            newRows[row] = updatedRow;
-            return { ...prevPattern, rows: newRows };
+            updatedPattern.rows[row] = updatedRow;
+
+            console.log(row, col, updatedPattern.rows[row].data)
+
+            return { ...prevData, pattern: updatedPattern };
         });
-        sendPattern(true);
+        sendData(true);
     }
 
-    const handleRowNameChange = (e, row) => {
+    const HandleRowNameChange = (e, row) => {
         const { value } = e.target;
-        usePattern((prevPattern) => {
-            const newRows = [...prevPattern.rows];
-            const updatedRow = { ...newRows[row] };
+        useData((prevData) => {
+            const updatedPattern = { ...prevData.pattern, rows: [...prevData.pattern.rows] };
+            const updatedRow = { ...updatedPattern.rows[row] };
             updatedRow.name = value
-            newRows[row] = updatedRow
-            return { ...pattern, rows: newRows }
+            updatedPattern.rows[row] = updatedRow
+            return { ...data, pattern: updatedPattern }
         })
-        sendPattern(true)
+        sendData(true)
     }
 
-    const handleAddRow = () => {
-        if (pattern.rows.length < 6) {
-            let colors = Array(16).fill("")
-            let rowData = Array(16).fill(false)
+    const HandleAddRow = () => {
+        let sendCheck = false;
+        let myRow = {
+            colors: [],
+            data: [],
+            name: '',
+        }
+
+        if (data.pattern.rows.length < 6) {
+            myRow.colors = Array(16).fill("")
+            myRow.data = Array(16).fill(false)
             let randomInt = Math.floor(Math.random() * templateNames.length)
-            const myRow = {
-                colors: colors,
-                data: rowData,
-                name: templateNames[randomInt],
-            }
-            usePattern((prevPattern) => {
-                const newRows = [...prevPattern.rows, myRow]
-                return { ...prevPattern, rows: newRows }
-            })
-            sendPattern(true)
+            myRow.name = templateNames[randomInt];
+            sendCheck = true
         }
+
+        useData((prevData) => {
+            if (sendCheck) {
+                const updatedPattern = {
+                    ...prevData.pattern,
+                    rows: [...prevData.pattern.rows, myRow]
+                };
+                return { ...prevData, pattern: updatedPattern }
+            }
+            return { ...prevData }
+        })
+        sendData(sendCheck)
     }
 
-    const handleRemoveRow = (index) => {
-        if (pattern.rows.length > 2) {
-            usePattern((prevPattern) => {
-                const tempRows = [...prevPattern.rows]
-                tempRows.splice(index, 1)
-                return { ...prevPattern, rows: tempRows }
-            })
-            sendPattern(true)
-        }
+    const HandleRemoveRow = (index) => {
+        useData((prevData) => {
+            if (data.pattern.rows.length > 2) {
+                const updatedPattern = { ...prevData.pattern, rows: [...prevData.pattern.rows] };
+                const updatedRows = [...updatedPattern.rows];
+                console.log(updatedRows)
+                updatedRows.splice(index, 1)
+                updatedPattern.rows = updatedRows
+                return { ...prevData, pattern: updatedPattern }
+            }
+            return { ...prevData }
+        })
+        sendData(true)
+    }
+
+
+    const ChangeTitle = (e) => {
+        useData(((prevData) => {
+            const updatedPattern = { ...prevData.pattern, rows: [...prevData.pattern.rows] };
+            updatedPattern.title = e.target.value;
+            return { ...prevData, pattern: updatedPattern }
+        }))
+    }
+
+    const ChangeAuthor = (e) => {
+        useData(((prevData) => {
+            const updatedPattern = { ...prevData.pattern, rows: [...prevData.pattern.rows] };
+            updatedPattern.author = e.target.value;
+            return { ...prevData, pattern: updatedPattern }
+        }))
+    }
+
+    const ChangeDescip = (e) => {
+        useData(((prevData) => {
+            const updatedPattern = { ...prevData.pattern, rows: [...prevData.pattern.rows] };
+            updatedPattern.descrip = e.target.value;
+            return { ...prevData, pattern: updatedPattern }
+        }))
     }
 
     return (
         <div>
             <div className="collab-top-bar-contianer">
                 <BackButton onPress={() => ws.close()} />
-                <h3>currently in room ({roomID})</h3>
+                <h3>currently in room ({data.roomid})</h3>
                 <span>users:
-                    {userNames}
+                    {data.users.map((user, i) => {
+                        return <span key={i}>{user} </span>
+                    })}
                 </span>
             </div>
             <PatternCollabView
-                rows={pattern.rows}
-                onToggle={toggleRowData}
-                onRowNameChange={handleRowNameChange}
-                toggleAddRow={handleAddRow}
-                toggleRemoveRow={handleRemoveRow}
+                rows={data.pattern.rows}
+                onToggle={ToggleRowData}
+                onRowNameChange={HandleRowNameChange}
+                toggleAddRow={HandleAddRow}
+                toggleRemoveRow={HandleRemoveRow}
             />
             <div className="collab-info-container">
+                <div className='last-message-box'>
+                    last message sent by {data.pattern.username}
+                </div>
                 <div className="collab-info-box">
                     <div className="collab-info">
                         <h3 className="collab-info-label">pattern title</h3>
                         <input
                             id="pattern-name"
                             className="collab-info-input"
-                            value={pattern.title}
-                            onChange={(e) => { usePattern({ ...pattern, title: e.target.value }); sendPattern(true) }}
+                            value={data.pattern.title}
+                            onChange={(e) => { ChangeTitle(e); sendData(true) }}
                         />
                     </div>
                     <div className="collab-info">
@@ -129,8 +173,8 @@ const PatternCollabConnected = ({
                         <input
                             id="pattern-name"
                             className="collab-info-input"
-                            value={pattern.author}
-                            onChange={(e) => { usePattern({ ...pattern, author: e.target.value }); sendPattern(true) }}
+                            value={data.pattern.author}
+                            onChange={(e) => { ChangeAuthor(e); sendData(true) }}
                         />
                     </div>
                 </div>
@@ -140,14 +184,22 @@ const PatternCollabConnected = ({
                         type="text"
                         id='description'
                         className='add-description'
-                        value={pattern.descrip}
-                        onChange={(e) => { usePattern({ ...pattern, descrip: e.target.value }); sendPattern(true) }}
+                        value={data.pattern.descrip}
+                        onChange={(e) => { ChangeDescip(e); sendData(true) }}
                     />
                 </div>
             </div>
             <div className='collab-add-pattern-conatiner'>
-                <button className='collab-add-pattern-button' onClick={postPattern}>send</button>
+                <button className='collab-add-pattern-button' onClick={toggleReady}>{data.numberofreadyusers > 0 ? `Unready (${data.numberofreadyusers}/${data.users.length})` : `Ready`}</button>
             </div>
+            {data.numberofreadyusers == data.users.length ?
+                <div className='collab-post-pattern-conatiner'>
+                    <button className='collab-add-pattern-button' onClick={postData}>
+                        Click to post Pattern!
+                    </button>
+                </div> :
+                <></>
+            }
         </div>
     )
 }

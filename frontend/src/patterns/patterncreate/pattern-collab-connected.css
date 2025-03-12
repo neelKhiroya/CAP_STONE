@@ -1,8 +1,25 @@
+.collab-info-container {
+    margin-top: 48px;
+}
+
+.collab-info-box {
+    margin-top: 86px;
+    display: flex;
+    justify-content: space-around;
+}
+
+
 .collab-add-pattern-conatiner {
     margin-top: 48px;
     padding: 24px;
     display: flex;
     justify-content: center;
+}
+
+.collab-post-pattern-conatiner {
+    margin-top: 4px;
+    display: flex;
+    justify-content: center;    
 }
 
 .collab-add-pattern-button {
@@ -17,4 +34,9 @@
 
 .collab-add-pattern-button:hover {
     background-color: rgba(87, 255, 87, 0.783);
+}
+
+.last-message-box {
+    opacity: .5;
+    text-align: center;
 }

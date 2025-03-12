@@ -15,7 +15,7 @@ func main() {
 	go hub.run()
 
 	r := mux.NewRouter()
-	r.HandleFunc("/ws/{room}", serveWs)
+	r.HandleFunc("/ws/{room}/{username}", serveWs)
 	http.Handle("/", r)
 
 	err := http.ListenAndServe(*addr, nil)

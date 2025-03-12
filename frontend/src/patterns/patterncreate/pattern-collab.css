@@ -173,15 +173,6 @@
     box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
 }
 
-.collab-info-container {
-    margin-top: 124px;
-}
-
-.collab-info-box {
-    display: flex;
-    justify-content: space-around;
-}
-
 .collab-info-label {
     text-align: center;
 }
@@ -202,4 +193,22 @@
     flex-direction: column;
     margin: 42px 68px 0 68px;
     text-align: start;
+}
+
+.completed {
+    text-align: center;
+}
+
+.posted-title {
+    padding: 12px;
+    font-size: 48px;
+}
+
+.dashboard-button {
+    padding: 12px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    color: #000;
 }

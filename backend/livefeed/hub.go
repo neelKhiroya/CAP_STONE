@@ -14,28 +14,19 @@ type subscription struct {
 	username string
 }
 
-// Hub maintains the set of active clients and broadcasts messages to the
-// clients.
 type Hub struct {
-	// Registered clients.
 	rooms map[string]map[*client]bool
 
-	//users
 	usernames map[string][]string
 
-	// Inbound messages from the clients.
 	broadcast chan data
 
-	// Register requests from the clients.
 	register chan subscription
 
-	// Unregister requests from clients.
 	unregister chan subscription
 
-	// last message sent
 	lastMessage map[string]*pattern
 
-	//	ready users
 	readyUsers map[string][]string
 }
 
@@ -49,30 +40,35 @@ var hub = Hub{
 	readyUsers:  make(map[string][]string),
 }
 
+func handleUserReady(m data) {
+	if m.IsUserReady && !slices.Contains(hub.readyUsers[m.RoomID], m.Pattern.Username) { // is the user ready and not already in the readyuser list
+		hub.readyUsers[m.RoomID] = append(hub.readyUsers[m.RoomID], m.Pattern.Username)
+	} else if !m.IsUserReady && slices.Contains(hub.readyUsers[m.RoomID], m.Pattern.Username) { // is the user NOT ready but in the readyuser list
+		for i, username := range hub.usernames[m.RoomID] {
+			if username == m.Pattern.Username {
+				hub.readyUsers[m.RoomID] = append(hub.readyUsers[m.RoomID][:i], hub.readyUsers[m.RoomID][i+1:]...)
+				break
+			}
+		}
+	}
+}
+
 func broadcast(connections map[*client]bool, m data) {
-	for c := range connections {
+	for c := range connections { //send to all users in connections
 		select {
 		case c.send <- &m:
 			hub.lastMessage[m.RoomID] = &m.Pattern
-			if m.SendReady && !slices.Contains(hub.readyUsers[m.RoomID], m.Pattern.Username) {
-				hub.readyUsers[m.RoomID] = append(hub.readyUsers[m.RoomID], m.Pattern.Username)
-				fmt.Printf("there is %d users ready\n", len(hub.readyUsers[m.RoomID]))
-			} else if m.SendReady && slices.Contains(hub.readyUsers[m.RoomID], m.Pattern.Username) {
-				for i, username := range hub.usernames[m.RoomID] {
-					if username == m.Pattern.Username {
-						hub.usernames[m.RoomID] = append(hub.readyUsers[m.RoomID][:i], hub.readyUsers[m.RoomID][i+1:]...)
-						break
-					}
-				}
+
+			handleUserReady(m)
+
+			c.send <- &data{
+				Pattern:            m.Pattern,
+				RoomID:             m.RoomID,
+				Users:              hub.usernames[m.RoomID],
+				IsUserReady:        m.IsUserReady,
+				NumberOfReadyUsers: len(hub.readyUsers[m.RoomID]),
 			}
 
-			fmt.Printf("sending %v for room: %s\n", m.Pattern.Descrip, m.RoomID)
-			c.send <- &data{
-				m.Pattern,
-				m.RoomID,
-				hub.usernames[m.RoomID],
-				len(hub.readyUsers[m.RoomID]) == len(hub.usernames[m.RoomID]),
-			}
 		default:
 			close(c.send)
 			delete(connections, c)
@@ -84,99 +80,137 @@ func broadcast(connections map[*client]bool, m data) {
 	}
 }
 
+func roomLimitCheck(s subscription) {
+	if len(hub.rooms) >= 5 {
+		s.client.ws.WriteJSON(map[string]string{
+			"error": "room limit reached",
+		})
+		s.client.ws.Close()
+	}
+}
+
+func fillArrayString(length int) []string {
+	s := make([]string, length)
+	for i := range s {
+		s[i] = ""
+	}
+	return s
+}
+
+func fillArrayBool(length int) []bool {
+	b := make([]bool, length)
+	for i := range b {
+		b[i] = false
+	}
+	return b
+}
+
+func newRoomCheck(s subscription, c map[*client]bool) {
+	if c == nil {
+		connections := make(map[*client]bool)
+		hub.rooms[s.room] = connections
+		hub.usernames[s.room] = []string{}
+		log.Println("created new room", s.room)
+		colors16 := fillArrayString(16)
+		bool16 := fillArrayBool(16)
+		hub.lastMessage[s.room] = &pattern{
+			Username: "server",
+			Rows: []row{
+				{
+					Colors: colors16,
+					Data:   bool16,
+					Name:   "Change me!",
+				},
+				{
+					Colors: colors16,
+					Data:   bool16,
+					Name:   "Change me!",
+				},
+			},
+		}
+	}
+}
+
+func userLimitCheck(s subscription, c map[*client]bool) {
+	if len(c) >= 3 { // if users in room is more than 3
+		s.client.ws.WriteJSON(map[string]string{
+			"error": "Room is full",
+		})
+		s.client.ws.Close()
+	}
+}
+
+func roomEmptyCheck(s subscription, c map[*client]bool) {
+	if c != nil {
+		if _, ok := c[s.client]; ok {
+			delete(c, s.client)
+			close(s.client.send)
+
+			//remove username
+			for i, username := range hub.usernames[s.room] {
+				if username == s.username {
+					hub.usernames[s.room] = append(hub.usernames[s.room][:i], hub.usernames[s.room][i+1:]...)
+					break
+				}
+			}
+			//delete room
+			if len(c) == 0 {
+				fmt.Println("deleting room ", s.room)
+				delete(hub.rooms, s.room)
+				delete(hub.usernames, s.room)
+			} else {
+				handleLastMessage(s, c) //update users
+			}
+		}
+	}
+
+}
+
+func handleLastMessage(s subscription, c map[*client]bool) {
+	if lastMsg, ok := hub.lastMessage[s.room]; ok {
+		fmt.Printf("sending last message + updated users\n")
+		m := data{
+			Pattern: *lastMsg,
+			RoomID:  s.room,
+			Users:   hub.usernames[s.room],
+		}
+		broadcast(c, m)
+	} else {
+		fmt.Println("no last message!")
+		m := data{
+			Pattern: pattern{},
+			RoomID:  s.room,
+			Users:   hub.usernames[s.room],
+		}
+		broadcast(c, m)
+	}
+}
+
 func (h *Hub) run() {
-	println()
 	for {
 		select {
 		case s := <-h.register:
 
-			if len(h.rooms) >= 5 {
-				s.client.ws.WriteJSON(map[string]string{
-					"error": "room limit reached",
-				})
-				s.client.ws.Close()
-				continue
-			}
+			roomLimitCheck(s)
 
 			connections := h.rooms[s.room]
-			if connections == nil {
-				connections = make(map[*client]bool)
-				h.rooms[s.room] = connections
-				h.usernames[s.room] = []string{} //init username list
-				log.Println("new room created: ", s.room)
-			}
-			if len(connections) >= 3 {
-				s.client.ws.WriteJSON(map[string]string{
-					"error": "Room is full",
-				})
-				s.client.ws.Close()
-				continue
-			}
+			newRoomCheck(s, connections)
+			userLimitCheck(s, connections)
 
-			h.rooms[s.room][s.client] = true
-			h.usernames[s.room] = append(h.usernames[s.room], s.username)
+			h.rooms[s.room][s.client] = true                              //add user bool
+			h.usernames[s.room] = append(h.usernames[s.room], s.username) //add username
+
 			fmt.Printf("%s is joining!\n", s.username)
 
-			if lastMsg, ok := h.lastMessage[s.room]; ok {
-				fmt.Printf("sending last message + updated users\n")
-				m := data{
-					Pattern: *lastMsg,
-					RoomID:  s.room,
-					Users:   h.usernames[s.room],
-				}
-				broadcast(connections, m)
-			} else {
-				m := data{
-					Pattern: pattern{},
-					RoomID:  s.room,
-					Users:   h.usernames[s.room],
-				}
-				broadcast(connections, m)
-			}
+			handleLastMessage(s, h.rooms[s.room]) //update users
 
 		case s := <-h.unregister:
 			connections := h.rooms[s.room]
-			if connections != nil {
-				if _, ok := connections[s.client]; ok {
-					delete(connections, s.client)
-					close(s.client.send)
-
-					//remove username
-					for i, username := range h.usernames[s.room] {
-						if username == s.username {
-							h.usernames[s.room] = append(h.usernames[s.room][:i], h.usernames[s.room][i+1:]...)
-							break
-						}
-					}
-					//delete room
-					if len(connections) == 0 {
-						delete(h.rooms, s.room)
-						delete(h.usernames, s.room)
-					}
-
-					if lastMsg, ok := h.lastMessage[s.room]; ok {
-						m := data{
-							Pattern: *lastMsg,
-							RoomID:  s.room,
-							Users:   hub.usernames[s.room],
-						}
-						broadcast(connections, m)
-					} else {
-						m := data{
-							Pattern: pattern{},
-							RoomID:  s.room,
-							Users:   hub.usernames[s.room],
-						}
-						broadcast(connections, m)
-					}
-
-				}
-			}
+			roomEmptyCheck(s, connections) //remove users & delete room
 
 		case m := <-h.broadcast:
 			connections := h.rooms[m.RoomID]
-
-			broadcast(connections, m)
+			broadcast(connections, m) // send message
 		}
 	}
 }

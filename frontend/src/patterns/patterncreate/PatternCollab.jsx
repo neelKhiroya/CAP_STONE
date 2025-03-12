@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom"
 import { useWebSocket } from '../../hooks/useWebSocket'
 
 import './pattern-collab.css';
-import PatternCollabView from "./PatternCollabView";
 import PatternCollabConnected from "./PatternCollabConnected"
 import useAddPattern from "../../hooks/useAddPattern"
 import { convertGridAndNamesToStrings } from "../../util/convertStringsAndGrids"
@@ -13,11 +12,12 @@ import { convertGridAndNamesToStrings } from "../../util/convertStringsAndGrids"
 export default function PatternCollab() {
 
     const [roomID, setID] = useState()
-    const [userName, setUserName] = useState('testie')
+    const [userName, setUserName] = useState('')
     const [userColor, setUserColor] = useState(null)
     const [joinPopUp, setJoinPopUp] = useState(false)
     const [createPopUp, setCreatePopUp] = useState(false)
-    const [shouldSendRows, setSendRows] = useState(false)
+    const [shouldSendData, setSendData] = useState(false)
+    const [isUserReady, setUserReady] = useState(false)
     const [wsError, setError] = useState(null)
     const { loading, error, addPattern } = useAddPattern();
     const [sentSucessful, setSuccess] = useState(0)
@@ -30,59 +30,69 @@ export default function PatternCollab() {
         rows: [],
     })
 
+    const [data, setData] = useState({
+        pattern: pattern,
+        roomid: roomID,
+        users: [],
+        isuserready: false,
+        numberofreadyusers: 0
+    })
+
     useEffect(() => {
-        setPattern({ ...pattern, username: userName })
-        setSendRows(true)
-    }, [userName])
+        console.log(data.isuserready)
+    }, [data.isuserready])
+
+    const { ws, connectToRoom } = useWebSocket(data, userName, shouldSendData, setSendData, setData, setError);
 
     const navagate = useNavigate()
 
-    const { ws, messages, userNames, connectToRoom } = useWebSocket(pattern, shouldSendRows, setSendRows, setPattern, setID, setError);
-
     const selectableColors = ['#fb5607', '#ff006e', '#8338ec', '#3a86ff']
-
-    useEffect(() => {
-            console.log("names", userNames)
-    }, [userNames])
 
     const postPattern = () => {
 
-        let combinedUsernames = ''
-        userNames.map((name, index) => {
-            if (index == 0) {
-                combinedUsernames += name
-            } else {
-                combinedUsernames += ` & ${name}`
+        if (data.numberofreadyusers == data.users.length) {
+            let combinedUsernames = ''
+            data.users.map((name, index) => {
+                if (index == 0) {
+                    combinedUsernames += name
+                } else {
+                    combinedUsernames += ` & ${name}`
+                }
+            })
+
+            let convertedRowNames = []
+            let convertedDrumRows = []
+
+            data.pattern.rows.map(row => {
+                convertedRowNames.push(row.name)
+                convertedDrumRows.push(row.data)
+            })
+
+            const namesAndStrings = convertGridAndNamesToStrings(convertedDrumRows, convertedRowNames)
+
+            const patternToGo = {
+                name: data.pattern.title,
+                username: combinedUsernames,
+                author: data.pattern.author,
+                description: data.pattern.descrip,
+                drumrows: namesAndStrings,
             }
-        })
 
-        let convertedRowNames = []
-        let convertedDrumRows = []
-
-        pattern.rows.map(row => {
-            convertedRowNames.push(row.name)
-            convertedDrumRows.push(row.data)
-        })
-
-        const namesAndStrings = convertGridAndNamesToStrings(convertedDrumRows, convertedRowNames)
-
-        const patternToGo = {
-            name: pattern.title,
-            username: combinedUsernames,
-            author: pattern.author,
-            description: pattern.descrip,
-            drumrows: namesAndStrings,
+            const result = addPattern(patternToGo)
+            if (result) {
+                setSuccess(1);
+            } else {
+                sentSucessful(-1);
+            }
+            console.log(sentSucessful)
         }
+    }
 
-        // const result = addPattern(patternToGo)
-        // if (result) {
-        //     setSuccess(1);
-        // } else {
-        //     sentSucessful(-1);
-        // }
-        ws.send(JSON.stringify({
-            sendready: true,
-        }))
+    const toggleReady = () => {
+            console.log(`user is ready/unready`)
+            setData({...data, isuserready: !isUserReady})
+            setUserReady(!isUserReady)
+            setSendData(true)
     }
 
     const handleCreateRoom = () => {
@@ -98,7 +108,6 @@ export default function PatternCollab() {
 
         let temprows = Array(2).fill(myRow)
         setPattern({ ...pattern, rows: temprows })
-        setSendRows(true)
     }
 
     const handleJoinRoom = () => {
@@ -118,36 +127,44 @@ export default function PatternCollab() {
         </div>
     )
 
+    if (error) return (
+        <div className="error-post">
+            Uh oh! that didnt work, pleas try again!
+            <button onClick={() => navagate('/')}>home</button>
+        </div>
+    )
+
     if (sentSucessful) return (
-        <h1>
-            sent!
-            <button onClick={() => navagate('/')} >home</button>
-        </h1>
+        <div className="completed">
+            <h1 className="posted-title">
+            posted!
+            </h1>
+            <button onClick={() => navagate('/')} className="dashboard-button">View the DashBoard to see your pattern!</button>
+        </div>
     )
 
     if (ws) return (
         <PatternCollabConnected
             ws={ws}
-            roomID={roomID}
-            userNames={userNames}
             userColor={userColor}
-            pattern={pattern}
-            usePattern={setPattern}
-            sendPattern={setSendRows}
-            postPattern={postPattern}
+            data={data}
+            useData={setData}
+            sendData={setSendData}
+            toggleReady={toggleReady}
+            postData={postPattern}
         />
     )
 
     return (
         <div>
             <BackButton onPress={() => navagate('/')} />
-            <PopUp
+            <PopUp // newroom popup
                 prompt=""
                 isOpen={createPopUp}
                 onCancel={() => setCreatePopUp(false)}
                 onSubmit={() => {
-                    if (userColor && pattern.username) {
-                        connectToRoom('new')
+                    if (userColor && userName) {
+                        connectToRoom('new', userName)
                     }
                 }}
             >
@@ -161,20 +178,20 @@ export default function PatternCollab() {
                         onChange={(e) => setUserName(e.target.value)} />
                     <label htmlFor="username" className="collab-label">username</label>
                     <div className="color-container">
-                        {selectableColors.map(color => {
+                        {selectableColors.map((color, i) => {
                             return (
-                                <button className="collab-colors" style={{ backgroundColor: color, outline: userColor == color ? 'purple 2px solid' : 'none' }} onClick={() => setUserColor(color)}></button>
+                                <button key={i} className="collab-colors" style={{ backgroundColor: color, outline: userColor == color ? 'purple 2px solid' : 'none' }} onClick={() => setUserColor(color)}></button>
                             )
                         })}
                     </div>
                 </div>
             </PopUp>
 
-            <PopUp
+            <PopUp  // join room popup
                 prompt=""
                 isOpen={joinPopUp}
                 onCancel={() => setJoinPopUp(false)}
-                onSubmit={() => connectToRoom(roomID)}
+                onSubmit={() => connectToRoom(roomID, userName)}
             >
                 <div className="collab-input-group">
                     <input
@@ -182,8 +199,8 @@ export default function PatternCollab() {
                         className="collab-input"
                         placeholder="username"
                         required
-                        value={pattern.username}
-                        onChange={(e) => setPattern({ ...pattern, username: e.target.value })} />
+                        value={userName}
+                        onChange={(e) => setUserName(e.target.value)} />
                     <label htmlFor="username" className="collab-label">username</label>
                 </div>
                 <div className="collab-input-group" style={{ marginTop: '12px' }}>
@@ -201,9 +218,9 @@ export default function PatternCollab() {
                         roomID
                     </label>
                     <div className="color-container">
-                        {selectableColors.map(color => {
+                        {selectableColors.map((color, i) => {
                             return (
-                                <button className="collab-colors" style={{ backgroundColor: color, outline: userColor == color ? 'purple 2px solid' : 'none' }} onClick={() => setUserColor(color)}></button>
+                                <button key={i} className="collab-colors" style={{ backgroundColor: color, outline: userColor == color ? 'purple 2px solid' : 'none' }} onClick={() => setUserColor(color)}></button>
                             )
                         })}
                     </div>
