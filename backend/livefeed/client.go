@@ -57,8 +57,7 @@ var upgrader = websocket.Upgrader{
 }
 
 type client struct {
-	ws *websocket.Conn
-
+	ws   *websocket.Conn
 	send chan *data
 }
 
@@ -163,27 +162,29 @@ func serveWs(w http.ResponseWriter, r *http.Request) {
 	room := vars["room"]
 	username := vars["username"]
 
+	// room must be 10 chars or "new"
 	roomParamsCheck(room, w, r)
 
-	//upgrade to ws
+	//	pass - upgrade to ws
 	ws, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	//user wants new room
+	//	user wants new room - generate new room ID
 	if room == "new" {
 		room = generateNewRoomID()
 	}
 
+	//	add to channel stream
 	c := &client{send: make(chan *data), ws: ws}
 	s := subscription{c, room, username}
 
-	//send to hub
+	// send subscription to hub
 	hub.register <- s
 
-	//start listening
+	// start listening for messages
 	go s.writePump()
 	s.readPump()
 }

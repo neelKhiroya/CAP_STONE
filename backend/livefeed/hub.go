@@ -191,26 +191,38 @@ func (h *Hub) run() {
 		select {
 		case s := <-h.register:
 
+			// checks if the room limit is full (10 rooms max in the hub)
 			roomLimitCheck(s)
 
+			// gets list of clients & bools
 			connections := h.rooms[s.room]
+
+			// checks if theres any clients in the room (creates starter pattern and new channel)
 			newRoomCheck(s, connections)
+
+			//checks if the rooms client limit if full (max 3 clients in a room)
 			userLimitCheck(s, connections)
 
-			h.rooms[s.room][s.client] = true                              //add user bool
-			h.usernames[s.room] = append(h.usernames[s.room], s.username) //add username
+			//	sets true to the client key (client is active and should recive messages)
+			h.rooms[s.room][s.client] = true
+
+			//	adds clients username to the list of users in the room. (keeps track of usernames in room)
+			h.usernames[s.room] = append(h.usernames[s.room], s.username)
 
 			fmt.Printf("%s is joining!\n", s.username)
 
-			handleLastMessage(s, h.rooms[s.room]) //update users
+			//	broadcast starter pattern and list of usernames to each client.
+			handleLastMessage(s, h.rooms[s.room])
 
 		case s := <-h.unregister:
 			connections := h.rooms[s.room]
-			roomEmptyCheck(s, connections) //remove users & delete room
+			// checks if last user left the room, also sends out updated userlist when client disconnects.
+			roomEmptyCheck(s, connections)
 
 		case m := <-h.broadcast:
 			connections := h.rooms[m.RoomID]
-			broadcast(connections, m) // send message
+			// send data and save last data sent
+			broadcast(connections, m)
 		}
 	}
 }
