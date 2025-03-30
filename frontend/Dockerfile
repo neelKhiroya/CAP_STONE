@@ -1,7 +1,16 @@
-FROM httpd:latest
+FROM node:latest
 
-WORKDIR /usr/local/apache2/htdocs/
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
 
-COPY dist/ .
+RUN corepack enable
+
+WORKDIR /app
+
+COPY . /app
+
+RUN pnpm install
 
 EXPOSE 7230
+
+CMD ["pnpm", "run", "dev", "--host"]

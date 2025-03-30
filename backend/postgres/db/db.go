@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/joho/godotenv"
 )
 
 var dbPool *pgxpool.Pool
@@ -31,17 +30,7 @@ type Pattern struct {
 
 func Connect() error {
 
-	err := godotenv.Load()
-	if err != nil {
-		return fmt.Errorf("cannot load env file %s", err.Error())
-	}
-
-	database := os.Getenv("DATABASE")
-	user := os.Getenv("DB_USER")
-	password := os.Getenv("PASSWORD")
-	port := os.Getenv("PORT")
-
-	connStr := "postgres://" + user + ":" + password + "@database:" + port + "/" + database
+	connStr := os.Getenv("DATABASE_URL")
 
 	config, err := pgxpool.ParseConfig(connStr)
 	if err != nil {

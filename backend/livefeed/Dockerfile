@@ -1,9 +1,14 @@
-FROM alpine:latest
+FROM golang:latest
 
-WORKDIR /root/
+WORKDIR /app
 
-COPY websocket_server .
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . ./
+
+RUN go build -o websocket_server .
 
 EXPOSE 7220
 
-CMD ["./websocket_server"]
+CMD [ "./websocket_server" ]

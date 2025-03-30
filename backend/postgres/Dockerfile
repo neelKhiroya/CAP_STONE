@@ -1,9 +1,13 @@
-FROM alpine:latest
+FROM golang:latest
 
-WORKDIR /root/
+WORKDIR /app
 
-COPY backend_server .
-COPY .env .
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . ./
+
+RUN go build -o backend_server .
 
 EXPOSE 7210
 
