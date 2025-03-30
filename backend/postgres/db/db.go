@@ -41,7 +41,7 @@ func Connect() error {
 	password := os.Getenv("PASSWORD")
 	port := os.Getenv("PORT")
 
-	connStr := "postgres://" + user + ":" + password + "@localhost:" + port + "/" + database
+	connStr := "postgres://" + user + ":" + password + "@database:" + port + "/" + database
 
 	config, err := pgxpool.ParseConfig(connStr)
 	if err != nil {

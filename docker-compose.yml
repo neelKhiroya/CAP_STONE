@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+
+  database:
+    image: postgres:latest
+    container_name: database
+    environment:
+      POSTGRES_USER: drumuser
+      POSTGRES_PASSWORD: capstone
+      POSTGRES_DB: drumpatterns
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./psql_table_init.sql:/docker-entrypoint-initdb.d/psql_table_init.sql 
+    ports:
+      - "7200:5432"
+
+  backend:
+    container_name: backend
+    build:
+      context: ./backend/postgres
+    environment:
+      DATABASE_URL: postgres://drumuser:capstone@database:5432/drumpatterns
+    ports:
+      - "7210:7210"
+    depends_on:
+      - database
+
+
+  websocket:
+    container_name: websocket
+    build:
+      context: ./backend/livefeed
+    ports:
+      - "7220:7220"
+
+  frontend:
+    container_name: frontend
+    build:
+      context: ./frontend
+    ports:
+      - "7230:80"
+    depends_on:
+      - backend
+      - websocket
+
+volumes:
+  postgres_data:

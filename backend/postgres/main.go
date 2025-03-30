@@ -16,7 +16,7 @@ func main() {
 
 	router := router.InitRouter()
 
-	routerErr := router.Run(":8440")
+	routerErr := router.Run(":7210")
 	if routerErr != nil {
 		fmt.Println(routerErr)
 	}
