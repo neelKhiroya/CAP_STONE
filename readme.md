@@ -4,6 +4,12 @@
 ### Users can create their own drum patterns in a live-time session, allowing other users to edit the same drum pattern in the same live time data. 
 
 
+# Installation and deployment
+This installation guide uses the Docker Engine to simplify the deployment process and ensure reliability. Steps to install the Docker Engine can be found on their [website](https://docs.docker.com/desktop/).
+
+## Step 1: Clone the repository
+
+
 ##  PLAN
 1. Create a live time chat using go websockets. This will set the foundation for sharing and creating real time drum patterns.
 
