@@ -1,7 +1,7 @@
-#   IDEA: Drum Pattern Database
+#  *PatternDB*: Drum Pattern Database
 ### This database will allow a user to search any drum pattern on the website. Once seleted, the drum pattern will be shown with the correct drum set for 8 bars. 
 
-### Users can create their own drum patterns in a live-time session, allowing other users to edit the same drum pattern in the same live time data. 
+### Users can create their own drum patterns, or allow others to join and edit the same drum pattern in real-time. 
 
 
 # Installation and deployment
@@ -12,38 +12,26 @@ To download the project onto your system, clone this reposopitory and navagate i
 
 ## Step 2: Start the services
 Using a terminal (or CMD) navagate to the root folder of the project and run the command:
-```
-docker compose up -d
-```
+    
+    docker compose up -d
 
 ### rebuilding
 If in need to rebuild the containers, the command:
-```
-docker compose up -d --build
-```
-will do so, this will apply any changes made to the code and may fix bugs. 
-##  PLAN
-1. Create a live time chat using go websockets. This will set the foundation for sharing and creating real time drum patterns.
 
-2. Create a smiple interactive graphic to create drum patterns, then implement the live chat feature such that the drum pattern will be real time data. 
+    docker compose up -d --build
 
-3. Create a simple database allowing admins to add and delete drum patterns throught a front end. 
+will do so. This can also reset the database and apply any changes in codebase.
 
-4. Create a front end that will sepertate but combine the database and live pattern feature. 
+## Step 3: Using the frontend
+After the containers have been built and are running. Navagate to fonntend found at [localhost:7230](http://localhost:7230/).
 
-# RESEARCH
-##  Live Chat:
-    websockets : 
-    - https://github.com/gorilla/websocket/tree/main/examples/chat
+The homepage will show recent drum patterns and provide a search bar.
+The collaboration feature can be found under *click to collaborate*, giving the option to create or join a room. 
 
-##  Drum pattern:
-    Interactive WebGL: 
+## Step 4: Closing the application (contaienrs)
+To close down the application, navagate to the terminal used or back into the root folder.
+Simply typing the command:
 
-##  Database:
-    Postgres: 
-    - https://www.postgresql.org/docs/8.1/sql-delete.html
-    - https://pkg.go.dev/github.com/jackc/pgx/v5
+    docker compose down
 
-##  Invite code:
-    Live chat rooms: 
-    - https://medium.com/@parvjn616/building-a-websocket-chat-application-in-go-388fff758575
+will shut down the containers associated with the stack, closing the application saftley. 
