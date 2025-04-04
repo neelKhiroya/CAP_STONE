@@ -8,8 +8,20 @@
 This installation guide uses the Docker Engine to simplify the deployment process and ensure reliability. Steps to install the Docker Engine can be found on their [website](https://docs.docker.com/desktop/).
 
 ## Step 1: Clone the repository
+To download the project onto your system, clone this reposopitory and navagate into the projects root folder.
 
+## Step 2: Start the services
+Using a terminal (or CMD) navagate to the root folder of the project and run the command:
+```
+docker compose up -d
+```
 
+### rebuilding
+If in need to rebuild the containers, the command:
+```
+docker compose up -d --build
+```
+will do so, this will apply any changes made to the code and may fix bugs. 
 ##  PLAN
 1. Create a live time chat using go websockets. This will set the foundation for sharing and creating real time drum patterns.
 
